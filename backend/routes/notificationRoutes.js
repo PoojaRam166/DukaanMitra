@@ -8,5 +8,6 @@ router.use(protect);
 router.get('/', getNotifications);
 router.put('/read-all', markAllRead);
 router.put('/:id/read', markRead);
+router.post('/subscribe', require('../controllers/notificationController').subscribePush);
 
 module.exports = router;

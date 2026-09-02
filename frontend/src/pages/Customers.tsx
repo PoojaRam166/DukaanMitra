@@ -167,6 +167,7 @@ export default function Customers() {
                 label={label}
                 value={val}
                 valueColor={color}
+                titleClassName="font-display font-extrabold text-lg text-[#1E2A3B]"
                 onClick={() => setHistoryView(view)}
                 selected={historyView === view}
               />

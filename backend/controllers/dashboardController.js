@@ -14,53 +14,55 @@ const getDashboard = async (req, res, next) => {
       await Promise.all([
         // Today's sales total
         db.query(
-          "SELECT COALESCE(SUM(total), 0) AS total, COUNT(*) AS count FROM bills WHERE created_at >= $1",
-          [todayStart.toISOString()]
+          "SELECT COALESCE(SUM(total), 0) AS total, COUNT(*) AS count FROM bills WHERE created_at >= $1 AND user_id = $2",
+          [todayStart.toISOString(), req.user.id]
         ),
         // Yesterday's sales total
         db.query(
-          "SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE created_at >= $1 AND created_at < $2",
-          [yesterdayStart.toISOString(), todayStart.toISOString()]
+          "SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE created_at >= $1 AND created_at < $2 AND user_id = $3",
+          [yesterdayStart.toISOString(), todayStart.toISOString(), req.user.id]
         ),
         // All-time sales
-        db.query("SELECT COALESCE(SUM(total), 0) AS total FROM bills"),
+        db.query("SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE user_id = $1", [req.user.id]),
         // All-time expenses
-        db.query("SELECT COALESCE(SUM(amount), 0) AS total FROM expenses"),
+        db.query("SELECT COALESCE(SUM(amount), 0) AS total FROM expenses WHERE user_id = $1", [req.user.id]),
         // Product stats
         db.query(
-          "SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE stock=0) AS out_of_stock, COUNT(*) FILTER (WHERE stock>0 AND stock<=min_stock) AS low_stock FROM products"
+          "SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE stock=0) AS out_of_stock, COUNT(*) FILTER (WHERE stock>0 AND stock<=min_stock) AS low_stock FROM products WHERE user_id = $1", [req.user.id]
         ),
         // Total customers
-        db.query("SELECT COUNT(*) AS total FROM customers"),
+        db.query("SELECT COUNT(*) AS total FROM customers WHERE user_id = $1", [req.user.id]),
         // Recent 5 bills
         db.query(`
           SELECT b.bill_number, b.total, b.payment_method, b.created_at, c.name AS customer_name
           FROM bills b LEFT JOIN customers c ON c.id = b.customer_id
+          WHERE b.user_id = $1
           ORDER BY b.created_at DESC LIMIT 5
-        `),
+        `, [req.user.id]),
         // Low stock products — includes out-of-stock (stock = 0) items too,
         // ordered so the most urgent (0 left) show first. Previously this
         // excluded stock = 0, so fully out-of-stock products never showed
         // up in the dashboard's low-stock list even though they're the
         // most urgent case.
         db.query(
-          "SELECT id, name, stock, min_stock FROM products WHERE stock <= min_stock ORDER BY stock ASC LIMIT 6"
+          "SELECT id, name, stock, min_stock FROM products WHERE stock <= min_stock AND user_id = $1 ORDER BY stock ASC LIMIT 6", [req.user.id]
         ),
         // Top 5 selling products by quantity
         db.query(`
           SELECT p.name, SUM(bi.quantity) AS total_qty, SUM(bi.subtotal) AS total_revenue
           FROM bill_items bi JOIN products p ON p.id = bi.product_id
+          WHERE p.user_id = $1
           GROUP BY p.id, p.name ORDER BY total_qty DESC LIMIT 5
-        `),
+        `, [req.user.id]),
         // Daily sales for the last 7 days
         db.query(`
           SELECT TO_CHAR(created_at, 'Dy') AS day,
                  COALESCE(SUM(total), 0) AS sales
           FROM bills
-          WHERE created_at >= NOW() - INTERVAL '7 days'
+          WHERE created_at >= NOW() - INTERVAL '7 days' AND user_id = $1
           GROUP BY TO_CHAR(created_at, 'Dy'), DATE_TRUNC('day', created_at)
           ORDER BY DATE_TRUNC('day', created_at)
-        `),
+        `, [req.user.id]),
       ]);
 
     res.json({
@@ -99,6 +101,7 @@ const getDashboard = async (req, res, next) => {
             priority: 'normal',
             icon: 'info',
             dedupeExact: true,
+            user_id: req.user.id
           });
         }
       }
@@ -108,8 +111,8 @@ const getDashboard = async (req, res, next) => {
         const lastMonthStart = new Date(todayStart.getFullYear(), todayStart.getMonth() - 1, 1);
         const monthLabel = lastMonthStart.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
         const lastMonthSales = await db.query(
-          'SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE created_at >= $1 AND created_at < $2',
-          [lastMonthStart.toISOString(), lastMonthEnd.toISOString()]
+          'SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE created_at >= $1 AND created_at < $2 AND user_id = $3',
+          [lastMonthStart.toISOString(), lastMonthEnd.toISOString(), req.user.id]
         );
         const total = parseFloat(lastMonthSales.rows[0].total);
         if (total > 0) {
@@ -119,6 +122,7 @@ const getDashboard = async (req, res, next) => {
             priority: 'normal',
             icon: 'success',
             dedupeExact: true,
+            user_id: req.user.id
           });
         }
       }

@@ -5,7 +5,7 @@ const { getPrefs, createNotification } = require('../utils/notify');
 const createBill = async (req, res, next) => {
   const client = await db.getClient();
   try {
-    const { customer_id, items, discount = 0, payment_method } = req.body;
+    const { customer_id, items, discount = 0, payment_method, transaction_id } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Bill must have at least one item' });
@@ -20,7 +20,7 @@ const createBill = async (req, res, next) => {
     let subtotal = 0;
     const resolvedItems = [];
     for (const item of items) {
-      const prodResult = await client.query('SELECT * FROM products WHERE id = $1 FOR UPDATE', [item.product_id]);
+      const prodResult = await client.query('SELECT * FROM products WHERE id = $1 AND user_id = $2 FOR UPDATE', [item.product_id, req.user.id]);
       if (prodResult.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(400).json({ success: false, message: `Product ID ${item.product_id} not found` });
@@ -47,8 +47,8 @@ const createBill = async (req, res, next) => {
     // Insert bill
     const amount_paid = payment_method === 'credit' ? 0 : total;
     const billResult = await client.query(
-      'INSERT INTO bills (bill_number, customer_id, subtotal, discount, total, payment_method, amount_paid) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-      [billNumber, customer_id || null, subtotal, discount, total, payment_method, amount_paid]
+      'INSERT INTO bills (user_id, bill_number, customer_id, subtotal, discount, total, payment_method, amount_paid, transaction_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
+      [req.user.id, billNumber, customer_id || null, subtotal, discount, total, payment_method, amount_paid, transaction_id || null]
     );
     const bill = billResult.rows[0];
 
@@ -60,8 +60,8 @@ const createBill = async (req, res, next) => {
         [bill.id, item.product.id, item.quantity, item.price, item.itemSubtotal]
       );
       const updated = await client.query(
-        'UPDATE products SET stock = stock - $1 WHERE id = $2 RETURNING id, name, stock, min_stock',
-        [item.quantity, item.product.id]
+        'UPDATE products SET stock = stock - $1 WHERE id = $2 AND user_id = $3 RETURNING id, name, stock, min_stock',
+        [item.quantity, item.product.id, req.user.id]
       );
       stockAlerts.push(updated.rows[0]);
     }
@@ -80,6 +80,7 @@ const createBill = async (req, res, next) => {
           description: `Bill ${billNumber} was billed for ₹${Number(total).toLocaleString('en-IN')}.`,
           priority: 'medium',
           icon: 'success',
+          user_id: req.user.id
         });
       }
 
@@ -91,6 +92,7 @@ const createBill = async (req, res, next) => {
             priority: 'critical',
             icon: 'alert',
             dedupeWithinHours: 24,
+            user_id: req.user.id
           });
         } else if (p.stock > 0 && p.stock <= p.min_stock && prefs.notify_low_stock) {
           await createNotification({
@@ -99,6 +101,7 @@ const createBill = async (req, res, next) => {
             priority: 'high',
             icon: 'warning',
             dedupeWithinHours: 24,
+            user_id: req.user.id
           });
         }
       }
@@ -124,10 +127,11 @@ const getBills = async (req, res, next) => {
       FROM bills b
       LEFT JOIN customers c ON c.id = b.customer_id
       LEFT JOIN bill_items bi ON bi.bill_id = b.id
+      WHERE b.user_id = $1
       GROUP BY b.id, c.name
       ORDER BY b.created_at DESC
       LIMIT 100
-    `);
+    `, [req.user.id]);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     next(err);
@@ -138,8 +142,8 @@ const getBills = async (req, res, next) => {
 const getBillById = async (req, res, next) => {
   try {
     const billResult = await db.query(
-      'SELECT b.*, c.name AS customer_name FROM bills b LEFT JOIN customers c ON c.id = b.customer_id WHERE b.id = $1',
-      [req.params.id]
+      'SELECT b.*, c.name AS customer_name FROM bills b LEFT JOIN customers c ON c.id = b.customer_id WHERE b.id = $1 AND b.user_id = $2',
+      [req.params.id, req.user.id]
     );
     if (billResult.rows.length === 0) return res.status(404).json({ success: false, message: 'Bill not found' });
 
@@ -163,7 +167,7 @@ const payCredit = async (req, res, next) => {
     }
 
     // First fetch the current bill
-    const current = await db.query('SELECT total, amount_paid FROM bills WHERE id = $1', [req.params.id]);
+    const current = await db.query('SELECT total, amount_paid FROM bills WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     if (current.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Bill not found' });
     }
@@ -172,8 +176,8 @@ const payCredit = async (req, res, next) => {
     const newAmountPaid = Math.min(parseFloat(amount_paid || 0) + amt, parseFloat(total));
 
     const result = await db.query(
-      'UPDATE bills SET amount_paid = $1 WHERE id = $2 RETURNING *',
-      [newAmountPaid, req.params.id]
+      'UPDATE bills SET amount_paid = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+      [newAmountPaid, req.params.id, req.user.id]
     );
 
     res.json({ success: true, message: `Recorded payment of ₹${amt}`, data: result.rows[0] });

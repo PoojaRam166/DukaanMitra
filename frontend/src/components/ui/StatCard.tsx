@@ -20,6 +20,7 @@ interface StatCardProps {
    * from state (e.g. `selectedCard === 'inStock'`) rather than hard-coding
    * it on a single card, so only one card is ever marked selected at a time. */
   selected?: boolean;
+  titleClassName?: string;
 }
 
 export function StatCard({ 
@@ -38,6 +39,7 @@ export function StatCard({
   onClick,
   className = '',
   selected = false,
+  titleClassName,
 }: StatCardProps) {
   const displayTitle = title || label;
 
@@ -54,7 +56,7 @@ export function StatCard({
     return (
       <div onClick={onClick} style={selectionStyle} className={`stat-card text-center ${bgColor} ${clickableClasses} ${className}`}>
         <div className={`font-display font-extrabold text-2xl ${valueColor} mb-1`}>{value}</div>
-        <div className="text-xs text-gray-500">{displayTitle}</div>
+        <div className={titleClassName || "text-xs text-gray-500"}>{displayTitle}</div>
       </div>
     );
   }
@@ -68,7 +70,7 @@ export function StatCard({
               <Icon size={16} style={{ color: iconColor }} />
             </div>
           )}
-          <p className="text-xs text-gray-500 font-medium">{displayTitle}</p>
+          <p className={titleClassName || "text-xs text-gray-500 font-medium"}>{displayTitle}</p>
         </div>
         {Icon && iconBg && (
           <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>

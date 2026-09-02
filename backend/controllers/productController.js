@@ -5,8 +5,8 @@ const { getPrefs, createNotification } = require('../utils/notify');
 const getProducts = async (req, res, next) => {
   try {
     const { search = '', category = '', stock = '' } = req.query;
-    let query = 'SELECT * FROM products WHERE 1=1';
-    const params = [];
+    let query = 'SELECT * FROM products WHERE user_id = $1';
+    const params = [req.user.id];
 
     if (search) {
       params.push(`%${search}%`);
@@ -35,11 +35,11 @@ const getProducts = async (req, res, next) => {
     query += stock === 'attention' ? ' ORDER BY stock ASC' : ' ORDER BY created_at DESC';
 
     // Compute stats for all products matching search/category (ignoring stock filter)
-    let statsQuery = 'SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE stock > min_stock) as in_stock, COUNT(*) FILTER (WHERE stock > 0 AND stock <= min_stock) as low_stock, COUNT(*) FILTER (WHERE stock = 0) as out_of_stock FROM products WHERE 1=1';
-    if (search) statsQuery += ` AND (name ILIKE $1 OR sku ILIKE $1)`;
-    if (category && category !== 'All') statsQuery += ` AND category = $${search ? 2 : 1}`;
+    let statsQuery = 'SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE stock > min_stock) as in_stock, COUNT(*) FILTER (WHERE stock > 0 AND stock <= min_stock) as low_stock, COUNT(*) FILTER (WHERE stock = 0) as out_of_stock FROM products WHERE user_id = $1';
+    if (search) statsQuery += ` AND (name ILIKE $2 OR sku ILIKE $2)`;
+    if (category && category !== 'All') statsQuery += ` AND category = $${search ? 3 : 2}`;
     
-    const statsResult = await db.query(statsQuery, params.slice(0, search && category && category !== 'All' ? 2 : (search || category && category !== 'All' ? 1 : 0)));
+    const statsResult = await db.query(statsQuery, params.slice(0, search && category && category !== 'All' ? 3 : (search || category && category !== 'All' ? 2 : 1)));
 
     const result = await db.query(query, params);
     // Compute stock status dynamically
@@ -64,7 +64,7 @@ const getProducts = async (req, res, next) => {
 // GET /api/products/:id
 const getProductById = async (req, res, next) => {
   try {
-    const result = await db.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+    const result = await db.query('SELECT * FROM products WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
@@ -82,8 +82,8 @@ const createProduct = async (req, res, next) => {
     if (stock < 0) return res.status(400).json({ success: false, message: 'Stock cannot be negative' });
 
     const result = await db.query(
-      'INSERT INTO products (name, sku, category, buy_price, sell_price, stock, min_stock, unit) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
-      [name, sku || null, category || null, buy_price || 0, sell_price, stock || 0, min_stock || 0, unit || 'piece']
+      'INSERT INTO products (user_id, name, sku, category, buy_price, sell_price, stock, min_stock, unit) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',
+      [req.user.id, name, sku || null, category || null, buy_price || 0, sell_price, stock || 0, min_stock || 0, unit || 'piece']
     );
     res.status(201).json({ success: true, message: 'Product created', data: result.rows[0] });
   } catch (err) {
@@ -97,8 +97,8 @@ const updateProduct = async (req, res, next) => {
   try {
     const { name, sku, category, buy_price, sell_price, stock, min_stock, unit } = req.body;
     const result = await db.query(
-      'UPDATE products SET name=$1, sku=$2, category=$3, buy_price=$4, sell_price=$5, stock=$6, min_stock=$7, unit=$8 WHERE id=$9 RETURNING *',
-      [name, sku || null, category || null, buy_price || 0, sell_price, stock || 0, min_stock || 0, unit || 'piece', req.params.id]
+      'UPDATE products SET name=$1, sku=$2, category=$3, buy_price=$4, sell_price=$5, stock=$6, min_stock=$7, unit=$8 WHERE id=$9 AND user_id=$10 RETURNING *',
+      [name, sku || null, category || null, buy_price || 0, sell_price, stock || 0, min_stock || 0, unit || 'piece', req.params.id, req.user.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Product not found' });
 
@@ -135,7 +135,7 @@ const updateProduct = async (req, res, next) => {
 // DELETE /api/products/:id
 const deleteProduct = async (req, res, next) => {
   try {
-    const result = await db.query('DELETE FROM products WHERE id = $1 RETURNING id', [req.params.id]);
+    const result = await db.query('DELETE FROM products WHERE id = $1 AND user_id = $2 RETURNING id', [req.params.id, req.user.id]);
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, message: 'Product deleted' });
   } catch (err) {
@@ -146,7 +146,7 @@ const deleteProduct = async (req, res, next) => {
 // GET /api/products/categories
 const getCategories = async (req, res, next) => {
   try {
-    const result = await db.query('SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category');
+    const result = await db.query('SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND user_id = $1 ORDER BY category', [req.user.id]);
     res.json({ success: true, data: result.rows.map(r => r.category) });
   } catch (err) {
     next(err);
@@ -163,8 +163,8 @@ const restockProduct = async (req, res, next) => {
     }
 
     const result = await db.query(
-      'UPDATE products SET stock = stock + $1 WHERE id = $2 RETURNING *',
-      [qty, req.params.id]
+      'UPDATE products SET stock = stock + $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+      [qty, req.params.id, req.user.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Product not found' });
 

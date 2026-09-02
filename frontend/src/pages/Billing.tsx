@@ -24,6 +24,9 @@ export default function Billing() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [shopUpiId, setShopUpiId] = useState("shopowner@upi");
+  const [newShopUpiId, setNewShopUpiId] = useState("");
+  const [isSavingUpi, setIsSavingUpi] = useState(false);
+  const [upiTransactionId, setUpiTransactionId] = useState("");
 
   useEffect(() => {
     productApi.getAll().then(res => setCatalog(res.data)).catch(() => {});
@@ -92,6 +95,7 @@ export default function Billing() {
         items,
         discount,
         payment_method: payment,
+        transaction_id: payment === "upi" ? upiTransactionId : undefined,
       });
       setLastBill(res.data);
       setSuccess(true);
@@ -102,6 +106,22 @@ export default function Billing() {
       alert(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveUpiId = async () => {
+    if (!newShopUpiId.includes('@')) {
+      alert("Please enter a valid UPI ID (e.g., number@upi)");
+      return;
+    }
+    setIsSavingUpi(true);
+    try {
+      await settingsApi.update({ upi_id: newShopUpiId });
+      setShopUpiId(newShopUpiId);
+    } catch (err: any) {
+      alert("Failed to save UPI ID: " + err.message);
+    } finally {
+      setIsSavingUpi(false);
     }
   };
 
@@ -215,6 +235,12 @@ export default function Billing() {
                 {lastBill.payment_method === "credit" ? "Credit (Pay Later)" : lastBill.payment_method}
               </span>
             </div>
+            {lastBill.payment_method === "upi" && lastBill.transaction_id && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Transaction ID</span>
+                <span className="font-semibold text-xs">{lastBill.transaction_id}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -416,27 +442,51 @@ export default function Billing() {
           </div>
 
           {payment === "upi" && total > 0 && (
-            <div
-              className="mt-2 p-3 border border-[#E4E7EC] rounded-xl flex flex-col items-center bg-[#F9FAFB] cursor-pointer"
-              title="Tap to pay with PhonePe or any UPI app"
-              onClick={() => {
-                // Standard UPI deep link — PhonePe (and other UPI apps) register
-                // themselves as handlers for `upi://pay` on mobile devices, so
-                // navigating to it opens the PhonePe payment flow directly (or
-                // an app chooser if multiple UPI apps are installed). On
-                // desktop browsers with no UPI app registered, this is a no-op,
-                // so scanning the QR code below still works as a fallback.
-                window.location.href = `upi://pay?pa=${encodeURIComponent(shopUpiId)}&pn=Shop%20Owner&am=${total}&cu=INR`;
-              }}
-            >
-              <div className="text-xs font-semibold text-[#1E2A3B] mb-2">Scan to Pay ₹{total.toLocaleString("en-IN")}</div>
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`upi://pay?pa=${shopUpiId}&pn=Shop%20Owner&am=${total}&cu=INR`)}`} 
-                alt="UPI QR Code" 
-                className="w-24 h-24 rounded-lg mix-blend-multiply" 
-              />
-              <div className="text-[10px] text-gray-500 mt-2 text-center">Money goes directly to {shopUpiId}</div>
-            </div>
+            (!shopUpiId || shopUpiId === "shopowner@upi" || shopUpiId === "") ? (
+              <div className="mt-2 p-3 border border-[#E4E7EC] rounded-xl flex flex-col bg-[#F9FAFB] fade-in">
+                <div className="text-sm font-semibold text-[#1E2A3B] mb-1">Set Up UPI Payment</div>
+                <div className="text-xs text-gray-500 mb-3">Please enter your shop's UPI ID first to receive payments via QR code.</div>
+                <input 
+                  type="text" 
+                  placeholder="e.g., 9876543210@ybl" 
+                  className="input-field text-sm py-1.5 w-full mb-2 bg-white"
+                  value={newShopUpiId}
+                  onChange={e => setNewShopUpiId(e.target.value)}
+                />
+                <button 
+                  className="btn-primary w-full py-1.5 text-xs justify-center" 
+                  onClick={handleSaveUpiId}
+                  disabled={isSavingUpi}
+                >
+                  {isSavingUpi ? "Saving..." : "Save & Generate QR"}
+                </button>
+              </div>
+            ) : (
+              <div
+                className="mt-2 p-3 border border-[#E4E7EC] rounded-xl flex flex-col items-center bg-[#F9FAFB] cursor-pointer fade-in"
+                title="Tap to pay with PhonePe or any UPI app"
+                onClick={() => {
+                  window.location.href = `upi://pay?pa=${encodeURIComponent(shopUpiId)}&pn=Shop%20Owner&am=${total}&cu=INR`;
+                }}
+              >
+                <div className="text-xs font-semibold text-[#1E2A3B] mb-2">Scan to Pay ₹{total.toLocaleString("en-IN")}</div>
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`upi://pay?pa=${shopUpiId}&pn=Shop%20Owner&am=${total}&cu=INR`)}`} 
+                  alt="UPI QR Code" 
+                  className="w-24 h-24 rounded-lg mix-blend-multiply" 
+                />
+                <div className="text-[10px] text-gray-500 mt-2 text-center">Money goes directly to {shopUpiId}</div>
+                <div className="mt-3 w-full" onClick={(e) => e.stopPropagation()}>
+                  <input 
+                    type="text" 
+                    placeholder="Enter UPI Transaction ID (Optional)" 
+                    className="input-field text-sm py-1.5 w-full bg-white"
+                    value={upiTransactionId}
+                    onChange={e => setUpiTransactionId(e.target.value)}
+                  />
+                </div>
+              </div>
+            )
           )}
 
           {payment === "credit" && total > 0 && (
@@ -478,9 +528,9 @@ export default function Billing() {
 
           <button
             className="btn-primary w-full justify-center py-3 text-base"
-            disabled={cart.length === 0 || saving}
+            disabled={cart.length === 0 || saving || (payment === "upi" && (!shopUpiId || shopUpiId === "shopowner@upi" || shopUpiId === ""))}
             onClick={handleCreateBill}
-            style={{ opacity: cart.length === 0 || saving ? 0.5 : 1, cursor: cart.length === 0 ? "not-allowed" : "pointer" }}
+            style={{ opacity: cart.length === 0 || saving || (payment === "upi" && (!shopUpiId || shopUpiId === "shopowner@upi" || shopUpiId === "")) ? 0.5 : 1, cursor: cart.length === 0 ? "not-allowed" : "pointer" }}
           >
             <Receipt size={16} />
             {saving ? "Creating..." : `Create Bill${cart.length > 0 ? ` · ₹${total.toLocaleString("en-IN")}` : ""}`}

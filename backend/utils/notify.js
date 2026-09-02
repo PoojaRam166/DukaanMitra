@@ -33,24 +33,49 @@ async function getPrefs(userId) {
  *    once-per-month summaries where the title embeds the date, so it
  *    should never be posted twice no matter how many times it's checked.
  */
-async function createNotification({ title, description, priority = 'normal', icon = 'info', dedupeWithinHours = null, dedupeExact = false }) {
+async function createNotification({ title, description, priority = 'normal', icon = 'info', dedupeWithinHours = null, dedupeExact = false, user_id }) {
   try {
     if (dedupeExact) {
-      const existing = await db.query('SELECT id FROM notifications WHERE title = $1 LIMIT 1', [title]);
+      const existing = await db.query('SELECT id FROM notifications WHERE title = $1 AND user_id = $2 LIMIT 1', [title, user_id]);
       if (existing.rows.length > 0) return null;
     } else if (dedupeWithinHours) {
       const existing = await db.query(
         `SELECT id FROM notifications
-         WHERE title = $1 AND read = false AND created_at >= NOW() - ($2 || ' hours')::interval
+         WHERE title = $1 AND user_id = $2 AND read = false AND created_at >= NOW() - ($3 || ' hours')::interval
          LIMIT 1`,
-        [title, String(dedupeWithinHours)]
+        [title, user_id, String(dedupeWithinHours)]
       );
       if (existing.rows.length > 0) return null;
     }
     const result = await db.query(
-      'INSERT INTO notifications (title, description, time, priority, icon) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [title, description, timeLabel(), priority, icon]
+      'INSERT INTO notifications (user_id, title, description, time, priority, icon) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+      [user_id, title, description, timeLabel(), priority, icon]
     );
+    
+    // trigger web push
+    try {
+      const webpush = require('web-push');
+      if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+        webpush.setVapidDetails(
+          'mailto:admin@example.com',
+          process.env.VAPID_PUBLIC_KEY,
+          process.env.VAPID_PRIVATE_KEY
+        );
+        const subs = await db.query('SELECT * FROM push_subscriptions WHERE user_id = $1', [user_id]);
+        const payload = JSON.stringify({ title, body: description });
+        for (const sub of subs.rows) {
+          webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth }
+          }, payload).catch(err => {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+               db.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [sub.endpoint]).catch(()=>{});
+            }
+          });
+        }
+      }
+    } catch(e) {}
+
     return result.rows[0];
   } catch (err) {
     // Notifications are a nice-to-have — never let a failure here break

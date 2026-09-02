@@ -31,18 +31,18 @@ const getSalesData = async (req, res, next) => {
           COALESCE(SUM(bi.quantity), 0) AS items_sold
         FROM bills b
         LEFT JOIN bill_items bi ON bi.bill_id = b.id
-        WHERE b.created_at ${dateRangeClauseB}
-      `),
+        WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
+      \`, [req.user.id]),
       // Trends (Group by date)
       db.query(`
         SELECT 
           TO_CHAR(DATE_TRUNC('day', created_at), 'Mon DD') AS date,
           COALESCE(SUM(total), 0) AS sales
         FROM bills
-        WHERE created_at ${dateRangeClause}
+        WHERE created_at ${dateRangeClause} AND user_id = $1
         GROUP BY DATE_TRUNC('day', created_at)
         ORDER BY DATE_TRUNC('day', created_at) ASC
-      `),
+      \`, [req.user.id]),
       // Daily Sales Table
       db.query(`
         SELECT 
@@ -53,10 +53,10 @@ const getSalesData = async (req, res, next) => {
           COALESCE(SUM(bi.quantity), 0) AS items
         FROM bills b
         LEFT JOIN bill_items bi ON bi.bill_id = b.id
-        WHERE b.created_at ${dateRangeClauseB}
+        WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
         GROUP BY DATE_TRUNC('day', b.created_at)
         ORDER BY DATE_TRUNC('day', b.created_at) DESC
-      `),
+      \`, [req.user.id]),
       // Best Selling Products
       db.query(`
         SELECT 
@@ -66,20 +66,20 @@ const getSalesData = async (req, res, next) => {
         FROM bill_items bi 
         JOIN products p ON p.id = bi.product_id
         JOIN bills b ON b.id = bi.bill_id
-        WHERE b.created_at ${dateRangeClauseB}
+        WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
         GROUP BY p.id, p.name 
         ORDER BY revenue DESC 
         LIMIT 5
-      `),
+      \`, [req.user.id]),
       // Payment Methods
       db.query(`
         SELECT 
           payment_method AS name, 
           COUNT(*) AS count
         FROM bills
-        WHERE created_at ${dateRangeClause}
+        WHERE created_at ${dateRangeClause} AND user_id = $1
         GROUP BY payment_method
-      `)
+      \`, [req.user.id])
     ]);
 
     // Calculate percentages for payment methods

@@ -115,6 +115,7 @@ export const notificationApi = {
   getAll: () => request<any>('GET', '/notifications'),
   markRead: (id: number) => request<any>('PUT', `/notifications/${id}/read`),
   markAllRead: () => request<any>('PUT', '/notifications/read-all'),
+  subscribeToPush: (subscription: any) => request<any>('POST', '/notifications/subscribe', subscription),
 };
 
 // Settings

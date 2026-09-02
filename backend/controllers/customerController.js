@@ -12,12 +12,12 @@ const getCustomers = async (req, res, next) => {
         MAX(b.created_at) AS last_purchase
       FROM customers c
       LEFT JOIN bills b ON b.customer_id = c.id
-      WHERE 1=1
+      WHERE c.user_id = $1
     `;
-    const params = [];
+    const params = [req.user.id];
     if (search) {
       params.push(`%${search}%`);
-      query += ` AND (c.name ILIKE $1 OR c.phone ILIKE $1)`;
+      query += ` AND (c.name ILIKE $2 OR c.phone ILIKE $2)`;
     }
     query += ' GROUP BY c.id ORDER BY c.created_at DESC';
 
@@ -31,16 +31,16 @@ const getCustomers = async (req, res, next) => {
 // GET /api/customers/:id
 const getCustomerById = async (req, res, next) => {
   try {
-    const customerResult = await db.query('SELECT * FROM customers WHERE id = $1', [req.params.id]);
+    const customerResult = await db.query('SELECT * FROM customers WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
     if (customerResult.rows.length === 0) return res.status(404).json({ success: false, message: 'Customer not found' });
 
     const billsResult = await db.query(
       `SELECT b.id, b.bill_number, b.total, b.amount_paid, b.payment_method, b.created_at,
         COUNT(bi.id) AS item_count
        FROM bills b LEFT JOIN bill_items bi ON bi.bill_id = b.id
-       WHERE b.customer_id = $1
+       WHERE b.customer_id = $1 AND b.user_id = $2
        GROUP BY b.id ORDER BY b.created_at DESC`,
-      [req.params.id]
+      [req.params.id, req.user.id]
     );
 
     res.json({ success: true, data: { ...customerResult.rows[0], purchase_history: billsResult.rows } });
@@ -56,8 +56,8 @@ const createCustomer = async (req, res, next) => {
     if (!name || !phone) return res.status(400).json({ success: false, message: 'Name and phone are required' });
 
     const result = await db.query(
-      'INSERT INTO customers (name, phone, email) VALUES ($1, $2, $3) RETURNING *',
-      [name, phone, email || null]
+      'INSERT INTO customers (user_id, name, phone, email) VALUES ($1, $2, $3, $4) RETURNING *',
+      [req.user.id, name, phone, email || null]
     );
 
     try {
@@ -68,6 +68,7 @@ const createCustomer = async (req, res, next) => {
           description: `${name} was added to your customer list.`,
           priority: 'normal',
           icon: 'success',
+          user_id: req.user.id
         });
       }
     } catch (notifyErr) {
@@ -85,8 +86,8 @@ const updateCustomer = async (req, res, next) => {
   try {
     const { name, phone, email, active } = req.body;
     const result = await db.query(
-      'UPDATE customers SET name=$1, phone=$2, email=$3, active=$4 WHERE id=$5 RETURNING *',
-      [name, phone, email || null, active !== undefined ? active : true, req.params.id]
+      'UPDATE customers SET name=$1, phone=$2, email=$3, active=$4 WHERE id=$5 AND user_id=$6 RETURNING *',
+      [name, phone, email || null, active !== undefined ? active : true, req.params.id, req.user.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Customer not found' });
     res.json({ success: true, message: 'Customer updated', data: result.rows[0] });
@@ -98,7 +99,7 @@ const updateCustomer = async (req, res, next) => {
 // DELETE /api/customers/:id
 const deleteCustomer = async (req, res, next) => {
   try {
-    const result = await db.query('DELETE FROM customers WHERE id = $1 RETURNING id', [req.params.id]);
+    const result = await db.query('DELETE FROM customers WHERE id = $1 AND user_id = $2 RETURNING id', [req.params.id, req.user.id]);
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Customer not found' });
     res.json({ success: true, message: 'Customer deleted' });
   } catch (err) {
@@ -121,9 +122,9 @@ const payCustomerCredit = async (req, res, next) => {
     // Fetch all unpaid credit bills for this customer, oldest first
     const unpaidBillsResult = await client.query(
       `SELECT id, total, amount_paid FROM bills 
-       WHERE customer_id = $1 AND payment_method = 'credit' AND amount_paid < total 
+       WHERE customer_id = $1 AND user_id = $2 AND payment_method = 'credit' AND amount_paid < total 
        ORDER BY created_at ASC FOR UPDATE`,
-      [req.params.id]
+      [req.params.id, req.user.id]
     );
 
     let distributed = 0;

@@ -48,6 +48,7 @@ async function ensureSchema() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
       title VARCHAR(255) NOT NULL,
       description TEXT,
       time VARCHAR(50) DEFAULT 'Just now',

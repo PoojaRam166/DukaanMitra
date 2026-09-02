@@ -16,24 +16,24 @@ const getReportsData = async (req, res, next) => {
       // Sales stats
       db.query(`
         SELECT COALESCE(SUM(total), 0) AS total_sales, COUNT(*) AS bills_count 
-        FROM bills ${salesQuery}
-      `),
+        FROM bills ${salesQuery} AND user_id = $1
+      \`, [req.user.id]),
       // Expense stats
       db.query(`
         SELECT COALESCE(SUM(amount), 0) AS total_expenses, COUNT(DISTINCT category) AS categories 
         FROM expenses 
-        WHERE date >= ${dateFilter.split(' AND ')[0].replace('created_at', 'date')}
-      `),
+        WHERE date >= ${dateFilter.split(' AND ')[0].replace('created_at', 'date')} AND user_id = $1
+      \`, [req.user.id]),
       // Inventory stats
       db.query(`
         SELECT COALESCE(SUM(stock * buy_price), 0) AS total_value, COUNT(*) AS products_count 
-        FROM products
-      `),
+        FROM products WHERE user_id = $1
+      \`, [req.user.id]),
       // Customer stats
       db.query(`
         SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE active = true) AS active 
-        FROM customers
-      `)
+        FROM customers WHERE user_id = $1
+      \`, [req.user.id])
     ]);
 
     const sales = parseFloat(salesData.rows[0].total_sales);
@@ -82,21 +82,21 @@ const getCustomReport = async (req, res, next) => {
       db.query(
         `SELECT b.bill_number, b.created_at, c.name AS customer_name, b.payment_method, b.subtotal, b.discount, b.total
          FROM bills b LEFT JOIN customers c ON c.id = b.customer_id
-         WHERE b.created_at BETWEEN $1 AND $2
+         WHERE b.created_at BETWEEN $1 AND $2 AND b.user_id = $3
          ORDER BY b.created_at ASC`,
-        [startDate, endDate]
+        [startDate, endDate, req.user.id]
       ),
       db.query(
         `SELECT date, category, description, amount FROM expenses
-         WHERE date BETWEEN $1 AND $2
+         WHERE date BETWEEN $1 AND $2 AND user_id = $3
          ORDER BY date ASC`,
-        [start, end]
+        [start, end, req.user.id]
       ),
       db.query(
-        `SELECT COALESCE(SUM(stock * buy_price), 0) AS total_value, COUNT(*) AS products_count FROM products`
+        `SELECT COALESCE(SUM(stock * buy_price), 0) AS total_value, COUNT(*) AS products_count FROM products WHERE user_id = $1`, [req.user.id]
       ),
       db.query(
-        `SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE active = true) AS active FROM customers`
+        `SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE active = true) AS active FROM customers WHERE user_id = $1`, [req.user.id]
       ),
     ]);
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { User, Store, Shield, Settings as SettingsIcon, Bell, Eye, EyeOff, Loader2 } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Card } from "../components/ui/Card";
-import { settingsApi, resolveAssetUrl } from "../services/api";
+import { notificationApi, settingsApi, resolveAssetUrl } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { LANGUAGE_OPTIONS, dbValueToCode } from "../i18n/translations";
@@ -37,8 +37,12 @@ export default function Settings() {
   });
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [error, setError] = useState("");
+  const [pushStatus, setPushStatus] = useState<"default" | "granted" | "denied">("default");
 
   useEffect(() => {
+    if ("Notification" in window) {
+      setPushStatus(Notification.permission);
+    }
     settingsApi.get().then(res => {
       setData(res.data);
       setProfileForm({ name: res.data.profile.name, email: res.data.profile.email });
@@ -140,6 +144,31 @@ export default function Settings() {
       setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       showSuccess();
     } catch (err: any) { setError(err.message); }
+  };
+
+  const enablePushNotifications = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      setPushStatus(permission);
+      if (permission === 'granted') {
+        const registration = await navigator.serviceWorker.ready;
+        const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        if (!vapidPublicKey) {
+           setError("VAPID Key not found in environment");
+           return;
+        }
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: vapidPublicKey
+        });
+        await notificationApi.subscribeToPush(subscription);
+        showSuccess();
+      } else {
+        setError("Notification permission denied");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to enable notifications");
+    }
   };
 
   if (loading) {
@@ -246,7 +275,7 @@ export default function Settings() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold mb-1.5">{t("phoneNumber")}</label>
-                    <input type="tel" className="input-field" value={shopForm.phone} onChange={e => setShopForm({ ...shopForm, phone: e.target.value })} />
+                    <input type="tel" pattern="\d{10}" maxLength={10} minLength={10} title="Phone number must be exactly 10 digits" className="input-field" value={shopForm.phone} onChange={e => setShopForm({ ...shopForm, phone: e.target.value.replace(/\D/g, '') })} />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold mb-1.5">{t("gstNumberOptional")}</label>
@@ -369,6 +398,19 @@ export default function Settings() {
                     </label>
                   </div>
                 ))}
+                
+                <div className="pt-4 border-t border-[#F3F4F6]">
+                  <h3 className="text-sm font-semibold mb-2">Browser Push Notifications</h3>
+                  <p className="text-xs text-gray-500 mb-3">Enable this to receive alerts even when the app is closed or in the background.</p>
+                  <button 
+                    type="button" 
+                    onClick={enablePushNotifications} 
+                    disabled={pushStatus === 'granted'}
+                    className={`btn-secondary text-sm ${pushStatus === 'granted' ? 'opacity-50 cursor-not-allowed bg-green-50 text-green-700 border-green-200' : ''}`}
+                  >
+                    {pushStatus === 'granted' ? '✓ Push Enabled' : 'Enable Push Notifications'}
+                  </button>
+                </div>
                 <button type="submit" className="btn-primary">{t("savePreferences")}</button>
               </form>
             )}

@@ -30,6 +30,9 @@ export default defineConfig(({ mode }) => {
           enabled: true,
           type: 'module',
         },
+        workbox: {
+          importScripts: ['/push-sw.js']
+        },
         manifest: {
           name: 'DukaanMitra',
           short_name: 'DukaanMitra',
