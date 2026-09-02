@@ -23,16 +23,16 @@ interface StatCardProps {
   titleClassName?: string;
 }
 
-export function StatCard({ 
-  title, 
+export function StatCard({
+  title,
   label,
   subtitle,
-  value, 
-  icon: Icon, 
-  iconColor, 
-  iconBg, 
-  change, 
-  trend, 
+  value,
+  icon: Icon,
+  iconColor,
+  iconBg,
+  change,
+  trend,
   valueColor = 'text-[#1E2A3B]',
   bgColor = '',
   centered = false,

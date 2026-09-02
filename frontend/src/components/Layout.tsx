@@ -52,7 +52,7 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
       productApi.getAll("", "", "attention").then((res) => {
         if (cancelled) return;
         setLowStockItems(res.data || []);
-      }).catch(() => {});
+      }).catch(() => { });
     };
     loadLowStock();
     const interval = setInterval(loadLowStock, 60000);
@@ -74,7 +74,7 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
         if (cancelled) return;
         const count = (res.data || []).filter((n: any) => !n.read).length;
         setUnreadCount(count);
-      }).catch(() => {});
+      }).catch(() => { });
     };
     loadUnread();
     const interval = setInterval(loadUnread, 30000);
@@ -100,7 +100,7 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
   const avatarUrl = resolveAssetUrl(user?.avatar_url);
 
   const handleLogout = async () => {
-    try { await authApi.logout(); } catch (e) {}
+    try { await authApi.logout(); } catch (e) { }
     setUser(null);
     onNavigate("login");
   };
@@ -235,104 +235,104 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
       )}
 
       <div className="flex flex-1 min-h-0">
-      {/* Desktop Sidebar */}
-      <aside
-        className={`hidden md:flex flex-col bg-[#1E2A3B] transition-all duration-300 flex-shrink-0 relative ${collapsed ? "w-[60px]" : "w-[220px]"}`}
-      >
-        <SidebarContent />
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-[72px] w-6 h-6 bg-white border border-[#E4E7EC] rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 z-10 transition-colors"
+        {/* Desktop Sidebar */}
+        <aside
+          className={`hidden md:flex flex-col bg-[#1E2A3B] transition-all duration-300 flex-shrink-0 relative ${collapsed ? "w-[60px]" : "w-[220px]"}`}
         >
-          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-        </button>
-      </aside>
-
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-[220px] bg-[#1E2A3B] h-full flex flex-col">
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X size={18} />
-            </button>
-            <SidebarContent />
-          </aside>
-        </div>
-      )}
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <header className="h-14 bg-white border-b border-[#E4E7EC] flex items-center px-4 gap-4 flex-shrink-0">
+          <SidebarContent />
           <button
-            className="md:hidden text-gray-500 hover:text-gray-700"
-            onClick={() => setMobileOpen(true)}
+            onClick={() => setCollapsed(!collapsed)}
+            className="absolute -right-3 top-[72px] w-6 h-6 bg-white border border-[#E4E7EC] rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 z-10 transition-colors"
           >
-            <Menu size={20} />
+            {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
           </button>
+        </aside>
 
-          <div className="ml-auto flex items-center gap-3">
-            <button
-              className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              onClick={() => onNavigate("notifications")}
-            >
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              )}
-            </button>
-            <div className="relative" ref={profileMenuRef}>
+        {/* Mobile drawer */}
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+            <aside className="relative w-[220px] bg-[#1E2A3B] h-full flex flex-col">
               <button
-                onClick={() => setProfileMenuOpen((v) => !v)}
-                className="cursor-pointer flex items-center"
-                title={displayName}
+                onClick={() => setMobileOpen(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white"
               >
-                <Avatar size={32} />
+                <X size={18} />
               </button>
-              {profileMenuOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] w-56 bg-white border border-[#E4E7EC] rounded-xl shadow-lg py-2 z-50">
-                  <div className="px-4 py-2.5 border-b border-[#E4E7EC] flex items-center gap-3">
-                    <Avatar size={36} />
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-[#1E2A3B] truncate">{displayName}</div>
-                      <div className="text-[11px] text-gray-400 truncate">{user?.email || ""}</div>
+              <SidebarContent />
+            </aside>
+          </div>
+        )}
+
+        {/* Main */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Header */}
+          <header className="h-14 bg-white border-b border-[#E4E7EC] flex items-center px-4 gap-4 flex-shrink-0">
+            <button
+              className="md:hidden text-gray-500 hover:text-gray-700"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu size={20} />
+            </button>
+
+            <div className="ml-auto flex items-center gap-3">
+              <button
+                className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() => onNavigate("notifications")}
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </button>
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setProfileMenuOpen((v) => !v)}
+                  className="cursor-pointer flex items-center"
+                  title={displayName}
+                >
+                  <Avatar size={32} />
+                </button>
+                {profileMenuOpen && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] w-56 bg-white border border-[#E4E7EC] rounded-xl shadow-lg py-2 z-50">
+                    <div className="px-4 py-2.5 border-b border-[#E4E7EC] flex items-center gap-3">
+                      <Avatar size={36} />
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-[#1E2A3B] truncate">{displayName}</div>
+                        <div className="text-[11px] text-gray-400 truncate">{user?.email || ""}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setProfileMenuOpen(false); onNavigate("settings"); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      <UserIcon size={15} /> {t("profile")}
+                    </button>
+                    <button
+                      onClick={() => { setProfileMenuOpen(false); onNavigate("settings"); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      <Settings size={15} /> {t("settings")}
+                    </button>
+                    <div className="border-t border-[#E4E7EC] mt-1 pt-1">
+                      <button
+                        onClick={() => { setProfileMenuOpen(false); handleLogout(); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut size={15} /> {t("logout")}
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => { setProfileMenuOpen(false); onNavigate("settings"); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <UserIcon size={15} /> {t("profile")}
-                  </button>
-                  <button
-                    onClick={() => { setProfileMenuOpen(false); onNavigate("settings"); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <Settings size={15} /> {t("settings")}
-                  </button>
-                  <div className="border-t border-[#E4E7EC] mt-1 pt-1">
-                    <button
-                      onClick={() => { setProfileMenuOpen(false); handleLogout(); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                    >
-                      <LogOut size={15} /> {t("logout")}
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
+          {/* Content */}
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+        </div>
       </div>
 
       {/* Mobile bottom nav */}
