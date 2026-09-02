@@ -60,7 +60,7 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
     <div className="min-h-screen bg-[#F7F8FA] py-10 px-6 flex flex-col items-center">
       <button
         onClick={() => onNavigate("landing")}
-        className="self-start mb-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors max-w-2xl w-full mx-auto"
+        className="self-start mb-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors max-w-2xl w-full mx-auto cursor-pointer"
       >
         <ArrowLeft size={15} /> {t("backToHome")}
       </button>
