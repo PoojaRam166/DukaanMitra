@@ -58,7 +58,7 @@ const subscribePush = async (req, res, next) => {
 const getVapidPublicKey = (req, res) => {
   res.json({
     success: true,
-    data: process.env.VAPID_PUBLIC_KEY || ''
+    data: process.env.VAPID_PUBLIC_KEY || 'BOw2Ao3dHNfCEf7Hd8iqZlurjPdkowpj3Jwbpg_ziZGe-a1qTjaxwpcwzLorEFRkQrohXzFhAiR0egll_meSY_E'
   });
 };
 

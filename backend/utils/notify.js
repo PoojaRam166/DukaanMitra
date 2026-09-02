@@ -55,11 +55,14 @@ async function createNotification({ title, description, priority = 'normal', ico
     // trigger web push
     try {
       const webpush = require('web-push');
-      if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+      const pubKey = process.env.VAPID_PUBLIC_KEY || 'BOw2Ao3dHNfCEf7Hd8iqZlurjPdkowpj3Jwbpg_ziZGe-a1qTjaxwpcwzLorEFRkQrohXzFhAiR0egll_meSY_E';
+      const privKey = process.env.VAPID_PRIVATE_KEY || 'WQUopcnhNzBGZ9yuhIu5ClSkeiu6bjTj1rIZbNdgOhs';
+      
+      if (pubKey && privKey) {
         webpush.setVapidDetails(
           'mailto:admin@example.com',
-          process.env.VAPID_PUBLIC_KEY,
-          process.env.VAPID_PRIVATE_KEY
+          pubKey,
+          privKey
         );
         const subs = await db.query('SELECT * FROM push_subscriptions WHERE user_id = $1', [user_id]);
         const payload = JSON.stringify({ title, body: description });
