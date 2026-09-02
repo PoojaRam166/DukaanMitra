@@ -76,6 +76,9 @@ async function ensureSchema() {
   // Backfill non-credit bills as fully paid, and credit bills as 0 paid (if not already set)
   await db.query(`UPDATE bills SET amount_paid = total WHERE payment_method != 'credit' AND amount_paid = 0;`);
 
+  // bills.transaction_id — added for tracking UPI reference numbers.
+  await db.query(`ALTER TABLE bills ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(255);`);
+
   // MULTI-TENANCY MIGRATION:
   // Ensure user_id column exists on all core tables for data isolation.
   const tables = ['products', 'customers', 'bills', 'expenses', 'push_subscriptions', 'notifications', 'shop_settings'];
