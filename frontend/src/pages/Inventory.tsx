@@ -42,6 +42,7 @@ export default function Inventory() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<number | null>(null);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   // Tracks exactly one selected summary card at a time. Defaults to "Total
   // Products" on first load, matching the default `stockFilter` of "All".
   const [selectedCard, setSelectedCard] = useState<string>("Total Products");
@@ -84,6 +85,7 @@ export default function Inventory() {
   const openEdit = (p: any) => {
     setForm({ name: p.name, sku: p.sku || "", category: p.category || "", buyPrice: p.buy_price, sellPrice: p.sell_price, stock: p.stock, minStock: p.min_stock, unit: p.unit || "piece" });
     setEditId(p.id);
+    setIsCustomCategory(p.category && !categories.includes(p.category) ? true : false);
     setShowModal(true);
   };
 
@@ -118,7 +120,7 @@ export default function Inventory() {
   return (
     <div className="p-6 pb-24 md:pb-6 max-w-screen-xl mx-auto fade-in">
       <PageHeader title={t("inventory")} subtitle={t("inventorySubtitle")}>
-        <button className="btn-primary" onClick={() => { setForm(emptyForm); setEditId(null); setShowModal(true); }}>
+        <button className="btn-primary" onClick={() => { setForm(emptyForm); setEditId(null); setIsCustomCategory(false); setShowModal(true); }}>
           <Plus size={15} /> Add Product
         </button>
       </PageHeader>
@@ -204,16 +206,33 @@ export default function Inventory() {
             <FormInput label="SKU" placeholder="ATT-001" value={form.sku} onChange={set("sku")} />
             <div>
               <label className="block text-sm font-semibold mb-1.5">Category</label>
-              <input 
-                list="category-options" 
-                className="input-field" 
-                placeholder="Select or type new..." 
-                value={form.category} 
-                onChange={set("category")} 
-              />
-              <datalist id="category-options">
-                {categories.slice(1).map((c) => <option key={c} value={c} />)}
-              </datalist>
+              {isCustomCategory ? (
+                <div className="flex gap-2">
+                  <input 
+                    className="input-field" 
+                    placeholder="Type new category..." 
+                    value={form.category} 
+                    onChange={set("category")}
+                    autoFocus
+                  />
+                  <button type="button" onClick={() => { setIsCustomCategory(false); setForm(f => ({ ...f, category: "" })); }} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                    <X size={18} />
+                  </button>
+                </div>
+              ) : (
+                <select className="input-field" value={form.category} onChange={(e) => {
+                  if (e.target.value === "CUSTOM_NEW") {
+                    setIsCustomCategory(true);
+                    setForm(f => ({ ...f, category: "" }));
+                  } else {
+                    set("category")(e);
+                  }
+                }}>
+                  <option value="">Select...</option>
+                  {categories.slice(1).map((c) => <option key={c} value={c}>{c}</option>)}
+                  <option value="CUSTOM_NEW" className="font-semibold text-[#3B5BDB]">+ Add Custom Category</option>
+                </select>
+              )}
             </div>
             <FormInput label="Purchase Price (₹)" type="number" placeholder="0" value={form.buyPrice} onChange={set("buyPrice")} />
             <FormInput label="Selling Price (₹)" type="number" placeholder="0" value={form.sellPrice} onChange={set("sellPrice")} required />
