@@ -148,6 +148,11 @@ export default function Settings() {
 
   const enablePushNotifications = async () => {
     try {
+      if (!("Notification" in window)) {
+        setError("Push notifications are not supported in this browser. On iPhone, you must tap 'Add to Home Screen' first.");
+        return;
+      }
+      
       const permission = await Notification.requestPermission();
       setPushStatus(permission);
       if (permission === 'granted') {
