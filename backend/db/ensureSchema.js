@@ -19,6 +19,23 @@ async function ensureSchema() {
   // users.avatar_url — added after the initial schema for profile photos.
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500) DEFAULT NULL;`);
 
+  // Migrate users to mobile number authentication
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);`);
+  // Backfill existing users with a dummy phone to satisfy unique constraint
+  await db.query(`UPDATE users SET phone = '999999' || id WHERE phone IS NULL;`);
+  
+  // Try to set NOT NULL and UNIQUE on phone, ignoring errors if already exists
+  try { await db.query(`ALTER TABLE users ALTER COLUMN phone SET NOT NULL;`); } catch(e) {}
+  try { await db.query(`ALTER TABLE users ADD CONSTRAINT users_phone_key UNIQUE (phone);`); } catch(e) {}
+  
+  // Make email optional
+  try { await db.query(`ALTER TABLE users ALTER COLUMN email DROP NOT NULL;`); } catch(e) {}
+  try { await db.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;`); } catch(e) {}
+
+  // Add forgot password OTP fields
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_otp VARCHAR(10);`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_otp_expires TIMESTAMP;`);
+
   // shop_settings — added for the Settings page (profile/shop info/preferences).
   await db.query(`
     CREATE TABLE IF NOT EXISTS shop_settings (

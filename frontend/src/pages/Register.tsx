@@ -83,7 +83,7 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
             setLoading(true);
             setError("");
             try {
-              await authApi.register(form.name, form.email, form.password);
+              await authApi.register(form.name, form.phone, form.email, form.password);
               await refreshUser();
               onNavigate("dashboard");
             } catch (err: any) {
@@ -101,8 +101,8 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
                   <input className="input-field" placeholder="Raj Sharma" value={form.name} onChange={set("name")} required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("email")}</label>
-                  <input type="email" className="input-field" placeholder="you@example.com" autoComplete="username" value={form.email} onChange={set("email")} required />
+                  <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("email")} <span className="text-gray-400 font-normal">(Optional)</span></label>
+                  <input type="email" className="input-field" placeholder="you@example.com" autoComplete="username" value={form.email} onChange={set("email")} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("password")}</label>

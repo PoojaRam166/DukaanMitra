@@ -48,8 +48,10 @@ async function requestForm<T>(method: string, path: string, formData: FormData):
 
 // Auth
 export const authApi = {
-  login: (email: string, password: string) => request<any>('POST', '/auth/login', { email, password }),
-  register: (name: string, email: string, password: string) => request<any>('POST', '/auth/register', { name, email, password }),
+  login: (phone: string, password: string) => request<any>('POST', '/auth/login', { phone, password }),
+  register: (name: string, phone: string, email: string, password: string) => request<any>('POST', '/auth/register', { name, phone, email, password }),
+  forgotPassword: (phone: string) => request<any>('POST', '/auth/forgotpassword', { phone }),
+  resetPassword: (phone: string, otp: string, newPassword: string) => request<any>('POST', '/auth/resetpassword', { phone, otp, newPassword }),
   me: () => request<any>('GET', '/auth/me'),
   logout: () => request<any>('POST', '/auth/logout'),
 };

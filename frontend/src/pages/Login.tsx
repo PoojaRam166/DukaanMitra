@@ -9,10 +9,69 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
   const { refreshUser } = useAuth();
   const { t } = useSettings();
   const [showPw, setShowPw] = useState(false);
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // Forgot password states
+  const [isForgot, setIsForgot] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [step, setStep] = useState<1 | 2>(1); // 1 = request OTP, 2 = verify OTP & reset
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    setLoading(true); 
+    setError(""); 
+    setSuccess("");
+    try { 
+      await authApi.login(phone, password); 
+      await refreshUser(); 
+      onNavigate("dashboard"); 
+    } catch (err: any) { 
+      setError(err.message || 'Login failed'); 
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await authApi.forgotPassword(phone);
+      setSuccess(`OTP Sent! (Demo OTP: ${res.demo_otp})`);
+      setStep(2);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      await authApi.resetPassword(phone, otp, newPassword);
+      setSuccess("Password reset successfully! Please login with your new password.");
+      setIsForgot(false);
+      setStep(1);
+      setOtp("");
+      setNewPassword("");
+      setPassword("");
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset password');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] flex">
@@ -55,10 +114,10 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
       {/* Right panel - form */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <button
-          onClick={() => onNavigate("landing")}
+          onClick={() => isForgot ? setIsForgot(false) : onNavigate("landing")}
           className="self-start mb-8 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
-          <ArrowLeft size={15} /> {t("backToHome")}
+          <ArrowLeft size={15} /> {isForgot ? "Back to Login" : t("backToHome")}
         </button>
 
         <div className="w-full max-w-sm">
@@ -69,65 +128,143 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
             <span className="font-display font-extrabold text-lg">DukaanMitra</span>
           </div>
 
-          <h1 className="font-display font-extrabold text-2xl text-[#1E2A3B] mb-1">{t("welcomeBack")}</h1>
-          <p className="text-sm text-gray-500 mb-8">{t("signInSubtitle")}</p>
+          <h1 className="font-display font-extrabold text-2xl text-[#1E2A3B] mb-1">
+            {isForgot ? "Reset Password" : t("welcomeBack")}
+          </h1>
+          <p className="text-sm text-gray-500 mb-8">
+            {isForgot ? "Enter your mobile number to receive an OTP." : t("signInSubtitle")}
+          </p>
 
-          <form onSubmit={async (e) => { e.preventDefault(); setLoading(true); setError(""); try { await authApi.login(email, password); await refreshUser(); onNavigate("dashboard"); } catch (err: any) { setError(err.message || 'Login failed'); } finally { setLoading(false); } }} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("emailAddress")}</label>
-              <input
-                type="email"
-                className="input-field"
-                placeholder="you@example.com"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+          {success && (
+            <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
+              <p className="text-sm text-green-700 font-medium">{success}</p>
             </div>
+          )}
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-semibold text-[#1E2A3B]">{t("password")}</label>
-                <a className="text-xs text-[#3B5BDB] cursor-pointer hover:underline">{t("forgotPassword")}</a>
-              </div>
-              <div className="relative">
+          {!isForgot ? (
+            /* LOGIN FORM */
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">Mobile Number</label>
                 <input
-                  type={showPw ? "text" : "password"}
-                  className="input-field pr-10"
-                  placeholder={t("enterYourPassword")}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="tel"
+                  className="input-field"
+                  placeholder="+91 98765 43210"
+                  autoComplete="username"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="remember" className="w-4 h-4 rounded accent-[#3B5BDB]" />
-              <label htmlFor="remember" className="text-sm text-gray-600">{t("rememberMe")}</label>
-            </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-semibold text-[#1E2A3B]">{t("password")}</label>
+                  <a 
+                    onClick={() => { setIsForgot(true); setError(""); setSuccess(""); }} 
+                    className="text-xs text-[#3B5BDB] cursor-pointer hover:underline"
+                  >
+                    {t("forgotPassword")}
+                  </a>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPw ? "text" : "password"}
+                    className="input-field pr-10"
+                    placeholder={t("enterYourPassword")}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
 
-            {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
-            <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
-              {loading ? t("signingIn") : t("signInToMyShop")}
-            </button>
-          </form>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="remember" className="w-4 h-4 rounded accent-[#3B5BDB]" />
+                <label htmlFor="remember" className="text-sm text-gray-600">{t("rememberMe")}</label>
+              </div>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            {t("dontHaveAccount")}{" "}
-            <button onClick={() => onNavigate("register")} className="text-[#3B5BDB] font-semibold hover:underline">
-              {t("createAccount")}
-            </button>
-          </p>
+              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+              <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
+                {loading ? t("signingIn") : t("signInToMyShop")}
+              </button>
+            </form>
+          ) : step === 1 ? (
+            /* FORGOT PASSWORD: STEP 1 (REQUEST OTP) */
+            <form onSubmit={handleRequestOtp} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">Mobile Number</label>
+                <input
+                  type="tel"
+                  className="input-field"
+                  placeholder="+91 98765 43210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+              <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
+                {loading ? "Sending OTP..." : "Send Reset OTP"}
+              </button>
+            </form>
+          ) : (
+            /* FORGOT PASSWORD: STEP 2 (VERIFY OTP & RESET) */
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">Enter OTP</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPw ? "text" : "password"}
+                    className="input-field pr-10"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+              <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
+                {loading ? "Resetting..." : "Reset Password"}
+              </button>
+            </form>
+          )}
+
+          {!isForgot && (
+            <p className="text-center text-sm text-gray-500 mt-6">
+              {t("dontHaveAccount")}{" "}
+              <button onClick={() => onNavigate("register")} className="text-[#3B5BDB] font-semibold hover:underline">
+                {t("createAccount")}
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </div>
