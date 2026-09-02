@@ -32,7 +32,7 @@ const getSalesData = async (req, res, next) => {
         FROM bills b
         LEFT JOIN bill_items bi ON bi.bill_id = b.id
         WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Trends (Group by date)
       db.query(`
         SELECT 
@@ -42,7 +42,7 @@ const getSalesData = async (req, res, next) => {
         WHERE created_at ${dateRangeClause} AND user_id = $1
         GROUP BY DATE_TRUNC('day', created_at)
         ORDER BY DATE_TRUNC('day', created_at) ASC
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Daily Sales Table
       db.query(`
         SELECT 
@@ -56,7 +56,7 @@ const getSalesData = async (req, res, next) => {
         WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
         GROUP BY DATE_TRUNC('day', b.created_at)
         ORDER BY DATE_TRUNC('day', b.created_at) DESC
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Best Selling Products
       db.query(`
         SELECT 
@@ -70,7 +70,7 @@ const getSalesData = async (req, res, next) => {
         GROUP BY p.id, p.name 
         ORDER BY revenue DESC 
         LIMIT 5
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Payment Methods
       db.query(`
         SELECT 
@@ -79,7 +79,7 @@ const getSalesData = async (req, res, next) => {
         FROM bills
         WHERE created_at ${dateRangeClause} AND user_id = $1
         GROUP BY payment_method
-      \`, [req.user.id])
+      `, [req.user.id])
     ]);
 
     // Calculate percentages for payment methods

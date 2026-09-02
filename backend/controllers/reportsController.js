@@ -17,23 +17,23 @@ const getReportsData = async (req, res, next) => {
       db.query(`
         SELECT COALESCE(SUM(total), 0) AS total_sales, COUNT(*) AS bills_count 
         FROM bills ${salesQuery} AND user_id = $1
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Expense stats
       db.query(`
         SELECT COALESCE(SUM(amount), 0) AS total_expenses, COUNT(DISTINCT category) AS categories 
         FROM expenses 
         WHERE date >= ${dateFilter.split(' AND ')[0].replace('created_at', 'date')} AND user_id = $1
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Inventory stats
       db.query(`
         SELECT COALESCE(SUM(stock * buy_price), 0) AS total_value, COUNT(*) AS products_count 
         FROM products WHERE user_id = $1
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Customer stats
       db.query(`
         SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE active = true) AS active 
         FROM customers WHERE user_id = $1
-      \`, [req.user.id])
+      `, [req.user.id])
     ]);
 
     const sales = parseFloat(salesData.rows[0].total_sales);

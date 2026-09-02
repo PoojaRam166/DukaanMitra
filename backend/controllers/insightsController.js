@@ -9,13 +9,13 @@ const getInsightsData = async (req, res, next) => {
         SELECT COALESCE(SUM(total) / 7, 0) AS avg_sales
         FROM bills
         WHERE created_at >= NOW() - INTERVAL '7 days' AND user_id = $1
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Last 30 days average sales
       db.query(`
         SELECT COALESCE(SUM(total) / 30, 0) AS avg_sales
         FROM bills
         WHERE created_at >= NOW() - INTERVAL '30 days' AND user_id = $1
-      \`, [req.user.id]),
+      `, [req.user.id]),
       // Product demand analysis (last 30 days)
       db.query(`
         SELECT 
@@ -26,7 +26,7 @@ const getInsightsData = async (req, res, next) => {
         LEFT JOIN bills b ON b.id = bi.bill_id AND b.created_at >= NOW() - INTERVAL '30 days' AND b.user_id = $1
         WHERE p.user_id = $1
         GROUP BY p.id, p.name, p.stock, p.min_stock
-      \`, [req.user.id])
+      `, [req.user.id])
     ]);
 
     const tomorrowAvg = parseFloat(avg7Days.rows[0].avg_sales);
