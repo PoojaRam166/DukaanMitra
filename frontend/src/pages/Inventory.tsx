@@ -68,7 +68,9 @@ export default function Inventory() {
 
   useEffect(() => {
     productApi.getCategories().then(res => {
-      setCategories(["All", ...res.data]);
+      const fetched = res.data || [];
+      const combined = Array.from(new Set([...defaultCategories.slice(1), ...fetched]));
+      setCategories(["All", ...combined]);
     }).catch(() => {});
   }, []);
 
@@ -202,10 +204,16 @@ export default function Inventory() {
             <FormInput label="SKU" placeholder="ATT-001" value={form.sku} onChange={set("sku")} />
             <div>
               <label className="block text-sm font-semibold mb-1.5">Category</label>
-              <select className="input-field" value={form.category} onChange={set("category")}>
-                <option value="">Select...</option>
-                {categories.slice(1).map((c) => <option key={c}>{c}</option>)}
-              </select>
+              <input 
+                list="category-options" 
+                className="input-field" 
+                placeholder="Select or type new..." 
+                value={form.category} 
+                onChange={set("category")} 
+              />
+              <datalist id="category-options">
+                {categories.slice(1).map((c) => <option key={c} value={c} />)}
+              </datalist>
             </div>
             <FormInput label="Purchase Price (₹)" type="number" placeholder="0" value={form.buyPrice} onChange={set("buyPrice")} />
             <FormInput label="Selling Price (₹)" type="number" placeholder="0" value={form.sellPrice} onChange={set("sellPrice")} required />
