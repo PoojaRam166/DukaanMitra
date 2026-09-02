@@ -45,11 +45,10 @@ export function StatCard({
 
   const clickableClasses = onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-[#3B5BDB]/50 hover:bg-[#EEF2FF]/30 active:translate-y-0 transition-all duration-200' : '';
 
-  // Inline style (rather than a Tailwind `border-*`/`ring-*` class) so the
-  // selected state always wins over the base `.stat-card` border defined in
-  // index.css, regardless of stylesheet load order or Tailwind ring support.
+  // Removed persistent blue border for selected state as requested,
+  // rely purely on the hover effect for interactivity feedback.
   const selectionStyle: React.CSSProperties = selected
-    ? { border: '2px solid #3B5BDB', boxShadow: '0 0 0 2px rgba(59,91,219,0.15)' }
+    ? { background: 'rgba(59,91,219,0.02)' }
     : {};
 
   if (centered) {
@@ -62,29 +61,22 @@ export function StatCard({
   }
 
   return (
-    <div onClick={onClick} style={selectionStyle} className={`stat-card fade-in flex flex-col justify-between ${bgColor} ${clickableClasses} ${className}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          {Icon && !iconBg && (
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gray-100" style={{ background: bgColor }}>
-              <Icon size={16} style={{ color: iconColor }} />
-            </div>
-          )}
-          <p className={titleClassName || "text-xs text-gray-500 font-medium"}>{displayTitle}</p>
-        </div>
-        {Icon && iconBg && (
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
-            <Icon size={14} style={{ color: iconColor }} />
+    <div onClick={onClick} style={selectionStyle} className={`stat-card fade-in flex flex-col items-center justify-center text-center py-6 min-h-[140px] ${bgColor} ${clickableClasses} ${className}`}>
+      <div className="flex items-center gap-2 mb-2">
+        {Icon && (
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: iconBg || bgColor || '#f3f4f6' }}>
+            <Icon size={16} style={{ color: iconColor }} />
           </div>
         )}
+        <p className={titleClassName || "text-sm text-gray-500 font-medium"}>{displayTitle}</p>
       </div>
-      <div className={`font-display font-extrabold text-xl ${valueColor} mb-1`}>{value}</div>
+      <div className={`font-display font-extrabold text-2xl ${valueColor} mb-1 mt-1`}>{value}</div>
       {subtitle && (
         <div className="text-[11px] text-gray-500 mt-1 font-medium">{subtitle}</div>
       )}
       {change && (
-        <div className={`text-[11px] font-semibold flex items-center gap-0.5 ${trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
-          {trend === 'up' ? <TrendingUp size={10} /> : trend === 'down' ? <TrendingDown size={10} /> : null}
+        <div className={`text-[12px] font-semibold flex items-center gap-1 mt-1 ${trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
+          {trend === 'up' ? <TrendingUp size={12} /> : trend === 'down' ? <TrendingDown size={12} /> : null}
           {change}
         </div>
       )}
