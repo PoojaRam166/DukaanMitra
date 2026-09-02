@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Eye, Edit2, Trash2, Users, ArrowLeft } from "lucide-react";
+import { Plus, Eye, Edit2, Trash2, Users, ArrowLeft, UserCheck, Wallet, Receipt, TrendingUp } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatCard } from "../components/ui/StatCard";
 import { Card } from "../components/ui/Card";
@@ -156,18 +156,22 @@ export default function Customers() {
               return null;
             })()}
           </Card>
-          <div className="md:col-span-2 grid grid-cols-3 gap-4">
+          <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
             {[
-              { label: "Total Bills", val: selected.total_bills, color: "text-[#3B5BDB]", view: "bills" as const },
-              { label: "Total Spent", val: `₹${parseFloat(selected.total_spent || 0).toLocaleString("en-IN")}`, color: "text-green-600", view: "byAmount" as const },
-              { label: "Avg Order", val: `₹${avg.toLocaleString("en-IN")}`, color: "text-[#D97706]", view: "aboveAvg" as const },
-            ].map(({ label, val, color, view }) => (
+              { label: "Total Bills", val: selected.total_bills, color: "text-[#3B5BDB]", view: "bills" as const, icon: Receipt, iconColor: "#3B5BDB", iconBg: "#EEF2FF" },
+              { label: "Total Spent", val: `₹${parseFloat(selected.total_spent || 0).toLocaleString("en-IN")}`, color: "text-green-600", view: "byAmount" as const, icon: Wallet, iconColor: "#16A34A", iconBg: "#DCFCE7" },
+              { label: "Avg Order", val: `₹${avg.toLocaleString("en-IN")}`, color: "text-[#D97706]", view: "aboveAvg" as const, icon: TrendingUp, iconColor: "#D97706", iconBg: "#FEF3C7" },
+            ].map(({ label, val, color, view, icon, iconColor, iconBg }, idx) => (
               <StatCard
+                className={idx === 2 ? "col-span-2 sm:col-span-1" : ""}
                 key={label}
                 label={label}
                 value={val}
+                icon={icon}
+                iconColor={iconColor}
+                iconBg={iconBg}
                 valueColor={color}
-                titleClassName="font-display font-extrabold text-lg text-[#1E2A3B]"
+                titleClassName="font-display font-extrabold text-sm md:text-lg text-[#1E2A3B] truncate"
                 onClick={() => setHistoryView(view)}
                 selected={historyView === view}
               />
@@ -331,16 +335,20 @@ export default function Customers() {
         </button>
       </PageHeader>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
         {[
-          { label: "Total Customers", val: customers.length, color: "text-[#3B5BDB]", filter: "all" as CustomerFilter },
-          { label: "Active Customers", val: active, color: "text-green-600", filter: "active" as CustomerFilter },
-          { label: "Total Purchases", val: `₹${totalSpent.toLocaleString("en-IN")}`, color: "text-[#D97706]", filter: "topSpenders" as CustomerFilter },
-        ].map(({ label, val, color, filter }) => (
+          { label: "Total Customers", val: customers.length, color: "text-[#3B5BDB]", filter: "all" as CustomerFilter, icon: Users, iconColor: "#3B5BDB", iconBg: "#EEF2FF" },
+          { label: "Active Customers", val: active, color: "text-green-600", filter: "active" as CustomerFilter, icon: UserCheck, iconColor: "#16A34A", iconBg: "#DCFCE7" },
+          { label: "Total Purchases", val: `₹${totalSpent.toLocaleString("en-IN")}`, color: "text-[#D97706]", filter: "topSpenders" as CustomerFilter, icon: Wallet, iconColor: "#D97706", iconBg: "#FEF3C7" },
+        ].map(({ label, val, color, filter, icon, iconColor, iconBg }, idx) => (
           <StatCard
+            className={idx === 2 ? "col-span-2 md:col-span-1" : ""}
             key={label}
             label={label}
             value={val}
+            icon={icon}
+            iconColor={iconColor}
+            iconBg={iconBg}
             valueColor={color}
             onClick={() => setCustomerFilter(filter)}
             selected={customerFilter === filter}

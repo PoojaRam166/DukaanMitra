@@ -43,7 +43,7 @@ export function StatCard({
 }: StatCardProps) {
   const displayTitle = title || label;
 
-  const clickableClasses = onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 transition-none' : '';
+  const clickableClasses = onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-[#3B5BDB]/50 hover:bg-[#EEF2FF]/30 active:translate-y-0 transition-all duration-200' : '';
 
   // Inline style (rather than a Tailwind `border-*`/`ring-*` class) so the
   // selected state always wins over the base `.stat-card` border defined in
