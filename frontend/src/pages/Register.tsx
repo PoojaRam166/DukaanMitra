@@ -79,11 +79,20 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
 
           <form onSubmit={async (e) => {
             e.preventDefault();
+            
+            // Validate Phone Number (exactly 10 digits)
+            const phoneDigits = form.phone.replace(/\D/g, '');
+            if (phoneDigits.length !== 10) {
+              setError("Please enter a valid 10-digit mobile number.");
+              return;
+            }
+
             if (form.password !== form.confirm) { setError(t("passwordsDontMatch")); return; }
             setLoading(true);
             setError("");
             try {
-              await authApi.register(form.name, form.phone, form.email, form.password);
+              // Pass the sanitized 10-digit phone number
+              await authApi.register(form.name, phoneDigits, form.email, form.password);
               await refreshUser();
               onNavigate("dashboard");
             } catch (err: any) {

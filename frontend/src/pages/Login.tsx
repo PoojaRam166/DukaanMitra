@@ -27,7 +27,8 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
     setError(""); 
     setSuccess("");
     try { 
-      await authApi.login(phone, password); 
+      const phoneDigits = phone.replace(/\D/g, '');
+      await authApi.login(phoneDigits, password); 
       await refreshUser(); 
       onNavigate("dashboard"); 
     } catch (err: any) { 
@@ -43,7 +44,11 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
     setError("");
     setSuccess("");
     try {
-      const res = await authApi.forgotPassword(phone);
+      const phoneDigits = phone.replace(/\D/g, '');
+      if (phoneDigits.length !== 10) {
+        throw new Error("Please enter a valid 10-digit mobile number.");
+      }
+      const res = await authApi.forgotPassword(phoneDigits);
       setSuccess(`OTP Sent! (Demo OTP: ${res.demo_otp})`);
       setStep(2);
     } catch (err: any) {
@@ -59,7 +64,8 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
     setError("");
     setSuccess("");
     try {
-      await authApi.resetPassword(phone, otp, newPassword);
+      const phoneDigits = phone.replace(/\D/g, '');
+      await authApi.resetPassword(phoneDigits, otp, newPassword);
       setSuccess("Password reset successfully! Please login with your new password.");
       setIsForgot(false);
       setStep(1);
