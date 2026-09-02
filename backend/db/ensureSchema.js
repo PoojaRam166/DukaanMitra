@@ -63,6 +63,21 @@ async function ensureSchema() {
   await db.query(`ALTER TABLE bills ADD COLUMN IF NOT EXISTS amount_paid DECIMAL(10, 2) DEFAULT 0;`);
   // Backfill non-credit bills as fully paid, and credit bills as 0 paid (if not already set)
   await db.query(`UPDATE bills SET amount_paid = total WHERE payment_method != 'credit' AND amount_paid = 0;`);
+
+  // MULTI-TENANCY MIGRATION:
+  // Ensure user_id column exists on all core tables for data isolation.
+  const tables = ['products', 'customers', 'bills', 'expenses', 'push_subscriptions'];
+  
+  // Find a default user to assign existing records to (so we don't break NOT NULL)
+  const defaultUserRes = await db.query('SELECT id FROM users LIMIT 1');
+  const defaultUserId = defaultUserRes.rows[0] ? defaultUserRes.rows[0].id : null;
+
+  for (const t of tables) {
+    await db.query(`ALTER TABLE ${t} ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE`);
+    if (defaultUserId) {
+      await db.query(`UPDATE ${t} SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
+    }
+  }
 }
 
 module.exports = ensureSchema;
