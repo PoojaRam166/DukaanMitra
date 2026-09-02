@@ -309,7 +309,7 @@ export default function Billing() {
       </div>
 
       {/* Right — Cart */}
-      <div className={`w-full md:w-[340px] bg-white flex flex-col md:overflow-hidden border-t md:border-t-0 border-[#E4E7EC] pb-24 md:pb-0 ${mobileView === "products" ? "hidden md:flex" : "flex md:h-full md:max-h-none"}`}>
+      <div className={`w-full md:w-[340px] bg-white flex flex-col md:overflow-y-auto border-t md:border-t-0 border-[#E4E7EC] pb-24 md:pb-0 ${mobileView === "products" ? "hidden md:flex" : "flex md:h-full md:max-h-none"}`}>
         <div className="p-4 border-b border-[#E4E7EC] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
@@ -559,7 +559,10 @@ export default function Billing() {
             style={{ opacity: cart.length === 0 || saving || (payment === "upi" && (!shopUpiId || shopUpiId === "shopowner@upi" || shopUpiId === "")) ? 0.5 : 1, cursor: cart.length === 0 ? "not-allowed" : "pointer" }}
           >
             <Receipt size={16} />
-            {saving ? "Creating..." : `Create Bill${cart.length > 0 ? ` · ₹${total.toLocaleString("en-IN")}` : ""}`}
+            {saving ? "Creating..." : 
+              payment === "upi" ? `Received UPI — Create Bill${cart.length > 0 ? ` (₹${total.toLocaleString("en-IN")})` : ""}` :
+              `Create Bill${cart.length > 0 ? ` · ₹${total.toLocaleString("en-IN")}` : ""}`
+            }
           </button>
         </div>
       </div>
