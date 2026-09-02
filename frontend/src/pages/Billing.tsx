@@ -27,6 +27,7 @@ export default function Billing() {
   const [newShopUpiId, setNewShopUpiId] = useState("");
   const [isSavingUpi, setIsSavingUpi] = useState(false);
   const [upiTransactionId, setUpiTransactionId] = useState("");
+  const [mobileView, setMobileView] = useState<"products" | "cart">("products");
 
   useEffect(() => {
     productApi.getAll().then(res => setCatalog(res.data)).catch(() => {});
@@ -260,9 +261,9 @@ export default function Billing() {
   }
 
   return (
-    <div className="h-full flex flex-col md:flex-row fade-in overflow-hidden">
+    <div className="h-full flex flex-col md:flex-row fade-in overflow-hidden relative">
       {/* Left — Products */}
-      <div className="flex-1 flex flex-col border-r border-[#E4E7EC] overflow-hidden">
+      <div className={`flex-1 flex flex-col border-r border-[#E4E7EC] overflow-hidden ${mobileView === "cart" ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-[#E4E7EC] bg-white">
           <SearchInput placeholder="Search product to add..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -291,13 +292,38 @@ export default function Billing() {
             ))}
           </div>
         </div>
+
+        {/* Mobile View Cart FAB */}
+        <div className="md:hidden fixed bottom-[72px] right-4 left-4 z-10">
+          <button 
+            onClick={() => setMobileView("cart")}
+            className="w-full bg-[#3B5BDB] text-white py-3.5 rounded-2xl shadow-xl font-bold flex items-center justify-between px-6"
+          >
+            <div className="flex items-center gap-2">
+              <Receipt size={18} />
+              <span>View Cart • {cart.length} items</span>
+            </div>
+            <span>₹{total.toLocaleString("en-IN")}</span>
+          </button>
+        </div>
       </div>
 
       {/* Right — Cart */}
-      <div className="w-full md:w-[340px] bg-white flex flex-col overflow-hidden border-t md:border-t-0 border-[#E4E7EC] max-h-[55vh] md:max-h-none pb-20 md:pb-0">
-        <div className="p-4 border-b border-[#E4E7EC]">
-          <h2 className="font-display font-extrabold text-base mb-3">Current Bill</h2>
-          
+      <div className={`w-full md:w-[340px] bg-white flex flex-col overflow-hidden border-t md:border-t-0 border-[#E4E7EC] pb-24 md:pb-0 ${mobileView === "products" ? "hidden md:flex" : "flex h-full md:max-h-none"}`}>
+        <div className="p-4 border-b border-[#E4E7EC] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[#3B5BDB]"
+              onClick={() => setMobileView("products")}
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="font-display font-extrabold text-base">Current Bill</h2>
+          </div>
+          <span className="md:hidden text-sm font-bold text-[#3B5BDB]">₹{total.toLocaleString("en-IN")}</span>
+        </div>
+        
+        <div className="p-4 border-b border-[#E4E7EC] pt-3">
           <div className="flex gap-2 mb-3">
             <button 
               className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-all ${customerType === 'walk-in' ? 'bg-[#3B5BDB] text-white border-[#3B5BDB]' : 'bg-white text-gray-500 border-[#E4E7EC] hover:border-[#3B5BDB]/40'}`}
