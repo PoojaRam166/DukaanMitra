@@ -45,9 +45,10 @@ const createBill = async (req, res, next) => {
     const billNumber = `INV-${Date.now().toString().slice(-7)}`;
 
     // Insert bill
+    const amount_paid = payment_method === 'credit' ? 0 : total;
     const billResult = await client.query(
-      'INSERT INTO bills (bill_number, customer_id, subtotal, discount, total, payment_method) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-      [billNumber, customer_id || null, subtotal, discount, total, payment_method]
+      'INSERT INTO bills (bill_number, customer_id, subtotal, discount, total, payment_method, amount_paid) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [billNumber, customer_id || null, subtotal, discount, total, payment_method, amount_paid]
     );
     const bill = billResult.rows[0];
 
@@ -152,4 +153,33 @@ const getBillById = async (req, res, next) => {
   }
 };
 
-module.exports = { createBill, getBills, getBillById };
+// PATCH /api/bills/:id/pay
+const payCredit = async (req, res, next) => {
+  try {
+    const { amount } = req.body;
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) {
+      return res.status(400).json({ success: false, message: 'Payment amount must be a positive number' });
+    }
+
+    // First fetch the current bill
+    const current = await db.query('SELECT total, amount_paid FROM bills WHERE id = $1', [req.params.id]);
+    if (current.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Bill not found' });
+    }
+
+    const { total, amount_paid } = current.rows[0];
+    const newAmountPaid = Math.min(parseFloat(amount_paid || 0) + amt, parseFloat(total));
+
+    const result = await db.query(
+      'UPDATE bills SET amount_paid = $1 WHERE id = $2 RETURNING *',
+      [newAmountPaid, req.params.id]
+    );
+
+    res.json({ success: true, message: `Recorded payment of ₹${amt}`, data: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { createBill, getBills, getBillById, payCredit };

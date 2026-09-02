@@ -77,6 +77,7 @@ export const billApi = {
   getAll: () => request<any>('GET', '/bills'),
   getById: (id: number) => request<any>('GET', `/bills/${id}`),
   create: (data: any) => request<any>('POST', '/bills', data),
+  payCredit: (id: number, amount: number) => request<any>('PATCH', `/bills/${id}/pay`, { amount }),
 };
 
 // Expenses

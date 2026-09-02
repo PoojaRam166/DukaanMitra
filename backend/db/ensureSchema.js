@@ -57,6 +57,11 @@ async function ensureSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // bills.amount_paid — added to track partial/full payments on credit bills.
+  await db.query(`ALTER TABLE bills ADD COLUMN IF NOT EXISTS amount_paid DECIMAL(10, 2) DEFAULT 0;`);
+  // Backfill non-credit bills as fully paid, and credit bills as 0 paid (if not already set)
+  await db.query(`UPDATE bills SET amount_paid = total WHERE payment_method != 'credit' AND amount_paid = 0;`);
 }
 
 module.exports = ensureSchema;

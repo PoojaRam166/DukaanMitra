@@ -35,7 +35,7 @@ const getCustomerById = async (req, res, next) => {
     if (customerResult.rows.length === 0) return res.status(404).json({ success: false, message: 'Customer not found' });
 
     const billsResult = await db.query(
-      `SELECT b.id, b.bill_number, b.total, b.payment_method, b.created_at,
+      `SELECT b.id, b.bill_number, b.total, b.amount_paid, b.payment_method, b.created_at,
         COUNT(bi.id) AS item_count
        FROM bills b LEFT JOIN bill_items bi ON bi.bill_id = b.id
        WHERE b.customer_id = $1

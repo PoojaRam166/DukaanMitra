@@ -39,6 +39,10 @@ export default function Customers() {
   // value, i.e. their unusually large purchases.
   const [historyView, setHistoryView] = useState<"bills" | "byAmount" | "aboveAvg">("bills");
 
+  const [payCreditBill, setPayCreditBill] = useState<any | null>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const [payingCredit, setPayingCredit] = useState(false);
+
   const fetchCustomers = async () => {
     try {
       setLoading(true);
@@ -196,9 +200,24 @@ export default function Customers() {
                       </td>
                       <td className="py-3 px-4 font-bold text-[13px]">₹{parseFloat(b.total).toLocaleString("en-IN")}</td>
                       <td className="py-3 px-4">
-                        <span className={`badge text-[11px] ${b.payment_method === "credit" ? "badge-warning" : "badge-info"}`}>
-                          {b.payment_method === "credit" ? "Credit (Pay Later)" : b.payment_method}
-                        </span>
+                        {b.payment_method === "credit" && parseFloat(b.amount_paid || 0) < parseFloat(b.total) ? (
+                          <button 
+                            onClick={() => { setPayCreditBill(b); setPayAmount((parseFloat(b.total) - parseFloat(b.amount_paid || 0)).toString()); }}
+                            className="badge badge-warning text-[11px] hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1"
+                            title="Click to record payment"
+                          >
+                            Credit (₹{parseFloat(b.amount_paid || 0).toLocaleString("en-IN")} paid)
+                            <Edit2 size={10} className="opacity-50" />
+                          </button>
+                        ) : b.payment_method === "credit" && parseFloat(b.amount_paid || 0) >= parseFloat(b.total) ? (
+                          <span className="badge badge-success text-[11px]">
+                            Credit (Paid)
+                          </span>
+                        ) : (
+                          <span className="badge badge-info text-[11px] capitalize">
+                            {b.payment_method}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -233,6 +252,68 @@ export default function Customers() {
               </div>
             </div>
           )}
+        </Modal>
+
+        {/* Record Credit Payment Modal */}
+        <Modal isOpen={!!payCreditBill} onClose={() => setPayCreditBill(null)} title="Record Payment" maxWidth="max-w-sm">
+          {payCreditBill && (() => {
+            const total = parseFloat(payCreditBill.total);
+            const paid = parseFloat(payCreditBill.amount_paid || 0);
+            const remaining = total - paid;
+            
+            return (
+              <form className="space-y-4" onSubmit={async (e) => {
+                e.preventDefault();
+                setPayingCredit(true);
+                try {
+                  await billApi.payCredit(payCreditBill.id, parseFloat(payAmount));
+                  setPayCreditBill(null);
+                  setPayAmount("");
+                  const res = await customerApi.getById(selected.id);
+                  setSelected(res.data);
+                  fetchCustomers();
+                } catch (err: any) {
+                  alert(err.message);
+                } finally {
+                  setPayingCredit(false);
+                }
+              }}>
+                <div className="bg-orange-50 text-orange-800 p-3 rounded-lg text-sm mb-2 border border-orange-100">
+                  <div className="font-semibold mb-1">Bill {payCreditBill.bill_number}</div>
+                  <div className="flex justify-between"><span>Total Amount:</span> <span>₹{total.toLocaleString("en-IN")}</span></div>
+                  <div className="flex justify-between text-orange-600"><span>Already Paid:</span> <span>₹{paid.toLocaleString("en-IN")}</span></div>
+                  <div className="flex justify-between font-bold mt-2 pt-2 border-t border-orange-200">
+                    <span>Remaining Balance:</span> 
+                    <span>₹{remaining.toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+                
+                <FormInput 
+                  label="Payment Amount (₹)" 
+                  type="number" 
+                  max={remaining} 
+                  step="0.01" 
+                  placeholder={remaining.toString()}
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  required
+                />
+                
+                <div className="flex gap-2">
+                  <button type="button" className="btn-secondary w-full justify-center py-1.5 text-xs bg-gray-50 border-gray-200 hover:bg-gray-100" onClick={() => setPayAmount(remaining.toString())}>
+                    Auto-fill Remaining Balance (₹{remaining})
+                  </button>
+                </div>
+                
+                <div className="flex gap-3 pt-3 mt-4 border-t border-gray-100">
+                  <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => setPayCreditBill(null)}>Cancel</button>
+                  <button type="submit" disabled={payingCredit} className="btn-primary flex-1 justify-center">
+                    {payingCredit ? "Saving..." : "Record Payment"}
+                  </button>
+                </div>
+              </form>
+            );
+          })()}
         </Modal>
       </div>
     );
