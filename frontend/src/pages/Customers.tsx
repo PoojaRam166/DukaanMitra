@@ -45,7 +45,7 @@ export default function Customers() {
     try {
       setLoading(true);
       const res = await customerApi.getAll(search);
-      setCustomers(res.data);
+      setCustomers(res.data || []);
     } catch (e) {
     } finally {
       setLoading(false);
@@ -277,7 +277,7 @@ export default function Customers() {
                   setShowPayModal(false);
                   setPayAmount("");
                   const res = await customerApi.getById(selected.id);
-                  setSelected(res.data);
+                  setSelected((prev: any) => ({ ...prev, ...res.data }));
                   fetchCustomers();
                 } catch (err: any) {
                   alert(err.message);
@@ -397,7 +397,7 @@ export default function Customers() {
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex gap-1">
-                    <button onClick={async () => { const res = await customerApi.getById(c.id); setSelected(res.data); }} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors" title="View"><Eye size={14} /></button>
+                    <button onClick={async () => { const res = await customerApi.getById(c.id); setSelected({ ...c, ...res.data }); }} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors" title="View"><Eye size={14} /></button>
                     <button onClick={() => handleDelete(c.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors" title="Delete"><Trash2 size={14} /></button>
                   </div>
                 </td>
