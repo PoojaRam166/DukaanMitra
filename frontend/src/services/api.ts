@@ -1,8 +1,9 @@
 // In production, set VITE_API_URL to the deployed backend's URL (e.g.
 // https://your-backend.onrender.com/api) in the frontend host's env vars.
 // Falls back to localhost for local development.
-// For local development, this uses a relative path '/api' which is intercepted by Vite's proxy.
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// For local development and Vercel deployment, this uses a relative path '/api'.
+// Vite (locally) and vercel.json (production) proxy this to the real backend.
+const BASE_URL = '/api';
 
 // The origin (no /api suffix) — kept for resolving any relative asset
 // path the backend might return. Avatars are now hosted on Cloudinary

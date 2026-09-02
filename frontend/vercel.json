@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://adventurous-enthusiasm-production-3c9d.up.railway.app/api/$1"
+    }
+  ]
+}
