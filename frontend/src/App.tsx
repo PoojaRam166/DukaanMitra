@@ -16,12 +16,13 @@ import Insights from "./pages/Insights";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
+import About from "./pages/About";
 
 export type Page =
   | "landing" | "login" | "register"
   | "dashboard" | "inventory" | "billing" | "customers"
   | "expenses" | "sales" | "reports" | "insights"
-  | "notifications" | "settings" | "help";
+  | "notifications" | "settings" | "help" | "about";
 
 // ---------------------------------------------------------------------
 // URL <-> Page mapping
@@ -65,6 +66,7 @@ const PATH_TO_PAGE: Record<string, Page> = {
   "/notifications": "notifications",
   "/settings": "settings",
   "/help": "help",
+  "/about": "about",
 };
 
 const PAGE_TO_PATH: Record<Page, string> = {
@@ -82,6 +84,7 @@ const PAGE_TO_PATH: Record<Page, string> = {
   notifications: "/notifications",
   settings: "/settings",
   help: "/help",
+  about: "/about",
 };
 
 function pageFromLocation(): Page {
@@ -112,7 +115,7 @@ function AppShell() {
 
   const appPages: Page[] = [
     "dashboard", "inventory", "billing", "customers",
-    "expenses", "sales", "reports", "insights", "notifications", "settings", "help",
+    "expenses", "sales", "reports", "insights", "notifications", "settings", "help", "about",
   ];
 
   if (page === "landing") return <Landing onNavigate={navigate} />;
@@ -132,6 +135,7 @@ function AppShell() {
       notifications: <Notifications />,
       settings: <Settings />,
       help: <Help />,
+      about: <About />,
     };
     return (
       <Layout currentPage={page} onNavigate={navigate}>

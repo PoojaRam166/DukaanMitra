@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Receipt, Users, TrendingDown,
   BarChart2, FileText, Lightbulb, Bell, Settings, HelpCircle,
   ChevronLeft, ChevronRight, Menu, X, Store, LogOut,
-  ChevronDown, User as UserIcon, AlertTriangle, ArrowRight,
+  ChevronDown, User as UserIcon, AlertTriangle, ArrowRight, Info
 } from "lucide-react";
 import { authApi, resolveAssetUrl, notificationApi, productApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -313,6 +313,12 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
                       className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                     >
                       <Settings size={15} /> {t("settings")}
+                    </button>
+                    <button
+                      onClick={() => { setProfileMenuOpen(false); onNavigate("about"); }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      <Info size={15} /> {t("aboutDukaanMitra")}
                     </button>
                     <div className="border-t border-[#E4E7EC] mt-1 pt-1">
                       <button

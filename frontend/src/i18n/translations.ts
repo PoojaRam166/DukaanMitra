@@ -50,6 +50,7 @@ export const dict: Record<string, Entry> = {
   help: { en: "Help", te: "సహాయం" },
   logout: { en: "Logout", te: "లాగ్ అవుట్" },
   profile: { en: "Profile", te: "ప్రొఫైల్" },
+  aboutDukaanMitra: { en: "About DukaanMitra", te: "దుకాణమిత్ర గురించి" },
   shopManagementTagline: { en: "Shop Management", te: "దుకాణ నిర్వహణ" },
 
   // Common actions
