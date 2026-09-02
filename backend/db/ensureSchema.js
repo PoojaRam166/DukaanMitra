@@ -59,6 +59,18 @@ async function ensureSchema() {
     );
   `);
 
+  // push_subscriptions — added for web push notifications.
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      endpoint VARCHAR(500) NOT NULL UNIQUE,
+      p256dh VARCHAR(255) NOT NULL,
+      auth VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // bills.amount_paid — added to track partial/full payments on credit bills.
   await db.query(`ALTER TABLE bills ADD COLUMN IF NOT EXISTS amount_paid DECIMAL(10, 2) DEFAULT 0;`);
   // Backfill non-credit bills as fully paid, and credit bills as 0 paid (if not already set)
