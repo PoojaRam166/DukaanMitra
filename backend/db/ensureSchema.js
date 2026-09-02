@@ -7,7 +7,7 @@
 // project is re-cloned or the database is set up fresh from an older copy
 // of schema.sql, and the app then fails with confusing errors like
 // `column "avatar_url" does not exist` or 500s on /api/settings.
-//
+
 // Everything below is the same idempotent DDL already in migration.sql
 // (IF NOT EXISTS / ADD COLUMN IF NOT EXISTS), just run automatically
 // against whatever database the app connects to, so the schema can never
