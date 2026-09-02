@@ -78,7 +78,7 @@ async function ensureSchema() {
 
   // MULTI-TENANCY MIGRATION:
   // Ensure user_id column exists on all core tables for data isolation.
-  const tables = ['products', 'customers', 'bills', 'expenses', 'push_subscriptions'];
+  const tables = ['products', 'customers', 'bills', 'expenses', 'push_subscriptions', 'notifications', 'shop_settings'];
   
   // Find a default user to assign existing records to (so we don't break NOT NULL)
   const defaultUserRes = await db.query('SELECT id FROM users LIMIT 1');
