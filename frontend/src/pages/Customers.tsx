@@ -40,6 +40,7 @@ export default function Customers() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [payAmount, setPayAmount] = useState("");
   const [payingCredit, setPayingCredit] = useState(false);
+  const [historyView, setHistoryView] = useState<"bills" | "byAmount" | "aboveAvg">("bills");
 
   const fetchCustomers = async () => {
     try {
