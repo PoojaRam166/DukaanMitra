@@ -20,16 +20,29 @@ export default function Sales({ onNavigate }: { onNavigate?: (p: Page) => void }
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState("");
+
   useEffect(() => {
     setLoading(true);
     salesApi.get(activeFilter).then(res => {
       setData(res.data);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(err => {
+      console.error(err);
+      setError(err.message || "Failed to load sales data");
+      setLoading(false);
+    });
   }, [activeFilter]);
 
-  if (loading || !data) {
+  if (loading) {
     return <div className="flex items-center justify-center min-h-screen text-gray-500 text-sm">Loading sales data...</div>;
+  }
+  
+  if (error || !data) {
+    return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 text-sm">
+      <p className="font-bold mb-2">Error loading sales data</p>
+      <p>{error || "No data received"}</p>
+    </div>;
   }
 
   return (

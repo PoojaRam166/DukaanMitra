@@ -29,11 +29,17 @@ export default function Insights() {
   const [restockError, setRestockError] = useState("");
   const [restockSuccess, setRestockSuccess] = useState("");
 
+  const [error, setError] = useState("");
+
   const fetchInsights = () => {
     insightsApi.get().then(res => {
       setData(res.data);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(err => {
+      console.error(err);
+      setError(err.message || "Failed to load insights data");
+      setLoading(false);
+    });
   };
 
   useEffect(() => {
@@ -74,8 +80,15 @@ export default function Insights() {
     }
   };
 
-  if (loading || !data) {
+  if (loading) {
     return <div className="flex items-center justify-center min-h-screen text-gray-500 text-sm">Loading insights...</div>;
+  }
+  
+  if (error || !data) {
+    return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 text-sm">
+      <p className="font-bold mb-2">Error loading insights</p>
+      <p>{error || "No data received"}</p>
+    </div>;
   }
 
   return (

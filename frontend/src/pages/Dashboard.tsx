@@ -26,12 +26,15 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
 
+  const [error, setError] = useState("");
+
   useEffect(() => {
     dashboardApi.get().then(res => {
       setData(res.data);
       setLoading(false);
     }).catch(err => {
       console.error(err);
+      setError(err.message || "Failed to load dashboard data");
       setLoading(false);
     });
   }, []);
@@ -46,8 +49,15 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
   const hour = now.getHours();
   const greeting = hour < 12 ? t("goodMorning") : hour < 17 ? t("goodAfternoon") : t("goodEvening");
 
-  if (loading || !data) {
+  if (loading) {
     return <div className="p-6 flex justify-center items-center min-h-screen text-gray-500 text-sm">Loading dashboard...</div>;
+  }
+  
+  if (error || !data) {
+    return <div className="p-6 flex flex-col justify-center items-center min-h-screen text-red-500 text-sm">
+      <p className="font-bold mb-2">Error loading dashboard</p>
+      <p>{error || "No data received"}</p>
+    </div>;
   }
 
   const getChange = (current: number, previous: number) => {
