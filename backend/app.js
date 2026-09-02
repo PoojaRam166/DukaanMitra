@@ -24,8 +24,9 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow localhost, the exact CLIENT_URL, or ANY vercel.app domain (like previews)
+    // Allow localhost, local network IPs, the exact CLIENT_URL, or ANY vercel.app domain (like previews)
     if (origin.includes('localhost') || 
+        origin.match(/^http:\/\/(192\.168|10|172\.(1[6-9]|2[0-9]|3[0-1]))\./) ||
         origin === process.env.CLIENT_URL || 
         origin.includes('vercel.app')) {
       return callback(null, true);
