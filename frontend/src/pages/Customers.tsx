@@ -140,7 +140,7 @@ export default function Customers() {
               </span>
             </div>
             {(() => {
-              const pendingDue = selected.purchase_history?.filter((b: any) => b.payment_method === 'credit').reduce((sum: number, b: any) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid || 0)), 0) || 0;
+              const pendingDue = (selected.purchase_history || []).filter((b: any) => b.payment_method === 'credit').reduce((sum: number, b: any) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid || 0)), 0);
               if (pendingDue > 0) {
                 return (
                   <div className="mt-4 pt-4 border-t border-[#E4E7EC]">
@@ -267,7 +267,7 @@ export default function Customers() {
         {/* Record Credit Payment Modal */}
         <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="Settle Customer Balance" maxWidth="max-w-sm">
           {(() => {
-            const pendingDue = selected?.purchase_history?.filter((b: any) => b.payment_method === 'credit').reduce((sum: number, b: any) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid || 0)), 0) || 0;
+            const pendingDue = (selected?.purchase_history || []).filter((b: any) => b.payment_method === 'credit').reduce((sum: number, b: any) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid || 0)), 0);
             return (
               <form className="space-y-4" onSubmit={async (e) => {
                 e.preventDefault();
