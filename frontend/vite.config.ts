@@ -74,6 +74,12 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
+      proxy: {
+        '/api': {
+          target: 'http://127.0.0.1:5000',
+          changeOrigin: true,
+        },
+      },
 
       // Allow access through ngrok and other external development URLs.
       // This fixes Vite's "Blocked request" error when opening the
