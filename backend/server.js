@@ -16,8 +16,8 @@ const start = async () => {
     await ensureSchema();
     console.log('✅ Database schema up to date');
 
-    app.listen(PORT, () => {
-      console.log(`🚀 DukaanMitra API running on http://localhost:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 DukaanMitra API running on http://0.0.0.0:${PORT}`);
     });
   } catch (err) {
     console.error('❌ Failed to connect to the database:', err.message);
