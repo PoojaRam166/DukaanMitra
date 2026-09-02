@@ -46,6 +46,10 @@ h2 { font-weight: 800; }
 h3 { font-weight: 700; }
 h4, h5, h6 { font-weight: 600; }
 
+/* Ensure all buttons and links always have a hand pointer in Tailwind */
+button, a[href], a[onClick] { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 99px; }
