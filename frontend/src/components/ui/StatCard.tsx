@@ -45,11 +45,9 @@ export function StatCard({
 
   const clickableClasses = onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-[#3B5BDB]/50 hover:bg-[#EEF2FF]/30 active:translate-y-0 transition-all duration-200' : '';
 
-  // Removed persistent blue border for selected state as requested,
+  // Removed persistent blue border and tint for selected state as requested,
   // rely purely on the hover effect for interactivity feedback.
-  const selectionStyle: React.CSSProperties = selected
-    ? { background: 'rgba(59,91,219,0.02)' }
-    : {};
+  const selectionStyle: React.CSSProperties = {};
 
   if (centered) {
     return (
