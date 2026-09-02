@@ -54,4 +54,12 @@ const subscribePush = async (req, res, next) => {
   }
 };
 
-module.exports = { getNotifications, markRead, markAllRead, subscribePush };
+// GET /api/notifications/vapid-public-key
+const getVapidPublicKey = (req, res) => {
+  res.json({
+    success: true,
+    data: process.env.VAPID_PUBLIC_KEY || ''
+  });
+};
+
+module.exports = { getNotifications, markRead, markAllRead, subscribePush, getVapidPublicKey };

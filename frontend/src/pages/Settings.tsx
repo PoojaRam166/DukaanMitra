@@ -152,9 +152,10 @@ export default function Settings() {
       setPushStatus(permission);
       if (permission === 'granted') {
         const registration = await navigator.serviceWorker.ready;
-        const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        const res = await notificationApi.getVapidPublicKey();
+        const vapidPublicKey = res.data;
         if (!vapidPublicKey) {
-           setError("VAPID Key not found in environment");
+           setError("VAPID Key not found on server");
            return;
         }
         const subscription = await registration.pushManager.subscribe({
