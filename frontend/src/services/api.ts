@@ -70,6 +70,7 @@ export const customerApi = {
   create: (data: any) => request<any>('POST', '/customers', data),
   update: (id: number, data: any) => request<any>('PUT', `/customers/${id}`, data),
   delete: (id: number) => request<any>('DELETE', `/customers/${id}`),
+  payCredit: (id: number, amount: number) => request<any>('PATCH', `/customers/${id}/pay`, { amount }),
 };
 
 // Bills

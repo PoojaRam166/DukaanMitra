@@ -37,9 +37,7 @@ export default function Customers() {
   // Spent" re-sorts by amount (biggest first), and "Avg Order" filters
   // down to just the bills that were above that customer's average order
   // value, i.e. their unusually large purchases.
-  const [historyView, setHistoryView] = useState<"bills" | "byAmount" | "aboveAvg">("bills");
-
-  const [payCreditBill, setPayCreditBill] = useState<any | null>(null);
+  const [showPayModal, setShowPayModal] = useState(false);
   const [payAmount, setPayAmount] = useState("");
   const [payingCredit, setPayingCredit] = useState(false);
 
@@ -130,15 +128,32 @@ export default function Customers() {
           <ArrowLeft size={15} /> Back to Customers
         </button>
         <div className="grid md:grid-cols-3 gap-5">
-          <Card className="text-center p-6">
+          <Card className="text-center p-6 flex flex-col h-full">
             <div className="w-16 h-16 rounded-full bg-[#3B5BDB] flex items-center justify-center text-white font-display font-extrabold text-2xl mx-auto mb-3">
               {selected.name[0]}
             </div>
             <h2 className="font-display font-extrabold text-lg">{selected.name}</h2>
             <p className="text-sm text-gray-500 mt-0.5">{selected.phone}</p>
-            <span className={`badge mt-2 ${selected.active ? "badge-success" : "badge-gray"}`}>
-              {selected.active ? "Active" : "Inactive"}
-            </span>
+            <div className="mt-2 flex-grow flex items-center justify-center">
+              <span className={`badge ${selected.active ? "badge-success" : "badge-gray"}`}>
+                {selected.active ? "Active" : "Inactive"}
+              </span>
+            </div>
+            {(() => {
+              const pendingDue = selected.purchase_history?.filter((b: any) => b.payment_method === 'credit').reduce((sum: number, b: any) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid || 0)), 0) || 0;
+              if (pendingDue > 0) {
+                return (
+                  <div className="mt-4 pt-4 border-t border-[#E4E7EC]">
+                    <div className="text-sm font-semibold text-gray-500 mb-1">Total Due</div>
+                    <div className="font-display font-extrabold text-xl text-orange-600 mb-3">₹{pendingDue.toLocaleString("en-IN")}</div>
+                    <button onClick={() => { setPayAmount(pendingDue.toString()); setShowPayModal(true); }} className="btn-primary w-full justify-center bg-orange-500 hover:bg-orange-600 border-none">
+                      Settle Due
+                    </button>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </Card>
           <div className="md:col-span-2 grid grid-cols-3 gap-4">
             {[
@@ -201,14 +216,9 @@ export default function Customers() {
                       <td className="py-3 px-4 font-bold text-[13px]">₹{parseFloat(b.total).toLocaleString("en-IN")}</td>
                       <td className="py-3 px-4">
                         {b.payment_method === "credit" && parseFloat(b.amount_paid || 0) < parseFloat(b.total) ? (
-                          <button 
-                            onClick={() => { setPayCreditBill(b); setPayAmount((parseFloat(b.total) - parseFloat(b.amount_paid || 0)).toString()); }}
-                            className="badge badge-warning text-[11px] hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1"
-                            title="Click to record payment"
-                          >
+                          <span className="badge badge-warning text-[11px]">
                             Credit (₹{parseFloat(b.amount_paid || 0).toLocaleString("en-IN")} paid)
-                            <Edit2 size={10} className="opacity-50" />
-                          </button>
+                          </span>
                         ) : b.payment_method === "credit" && parseFloat(b.amount_paid || 0) >= parseFloat(b.total) ? (
                           <span className="badge badge-success text-[11px]">
                             Credit (Paid)
@@ -255,19 +265,16 @@ export default function Customers() {
         </Modal>
 
         {/* Record Credit Payment Modal */}
-        <Modal isOpen={!!payCreditBill} onClose={() => setPayCreditBill(null)} title="Record Payment" maxWidth="max-w-sm">
-          {payCreditBill && (() => {
-            const total = parseFloat(payCreditBill.total);
-            const paid = parseFloat(payCreditBill.amount_paid || 0);
-            const remaining = total - paid;
-            
+        <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="Settle Customer Balance" maxWidth="max-w-sm">
+          {(() => {
+            const pendingDue = selected?.purchase_history?.filter((b: any) => b.payment_method === 'credit').reduce((sum: number, b: any) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid || 0)), 0) || 0;
             return (
               <form className="space-y-4" onSubmit={async (e) => {
                 e.preventDefault();
                 setPayingCredit(true);
                 try {
-                  await billApi.payCredit(payCreditBill.id, parseFloat(payAmount));
-                  setPayCreditBill(null);
+                  await customerApi.payCredit(selected.id, parseFloat(payAmount));
+                  setShowPayModal(false);
                   setPayAmount("");
                   const res = await customerApi.getById(selected.id);
                   setSelected(res.data);
@@ -278,35 +285,30 @@ export default function Customers() {
                   setPayingCredit(false);
                 }
               }}>
-                <div className="bg-orange-50 text-orange-800 p-3 rounded-lg text-sm mb-2 border border-orange-100">
-                  <div className="font-semibold mb-1">Bill {payCreditBill.bill_number}</div>
-                  <div className="flex justify-between"><span>Total Amount:</span> <span>₹{total.toLocaleString("en-IN")}</span></div>
-                  <div className="flex justify-between text-orange-600"><span>Already Paid:</span> <span>₹{paid.toLocaleString("en-IN")}</span></div>
-                  <div className="flex justify-between font-bold mt-2 pt-2 border-t border-orange-200">
-                    <span>Remaining Balance:</span> 
-                    <span>₹{remaining.toLocaleString("en-IN")}</span>
-                  </div>
+                <div className="bg-orange-50 text-orange-800 p-4 rounded-xl text-center mb-2 border border-orange-100">
+                  <div className="text-sm font-semibold mb-1 text-orange-600/80 uppercase tracking-wider">Total Pending Due</div>
+                  <div className="font-display font-extrabold text-3xl">₹{pendingDue.toLocaleString("en-IN")}</div>
                 </div>
                 
                 <FormInput 
                   label="Payment Amount (₹)" 
                   type="number" 
-                  max={remaining} 
+                  max={pendingDue} 
                   step="0.01" 
-                  placeholder={remaining.toString()}
+                  placeholder={pendingDue.toString()}
                   value={payAmount}
                   onChange={(e) => setPayAmount(e.target.value)}
                   required
                 />
                 
                 <div className="flex gap-2">
-                  <button type="button" className="btn-secondary w-full justify-center py-1.5 text-xs bg-gray-50 border-gray-200 hover:bg-gray-100" onClick={() => setPayAmount(remaining.toString())}>
-                    Auto-fill Remaining Balance (₹{remaining})
+                  <button type="button" className="btn-secondary w-full justify-center py-1.5 text-xs bg-gray-50 border-gray-200 hover:bg-gray-100" onClick={() => setPayAmount(pendingDue.toString())}>
+                    Auto-fill Full Balance (₹{pendingDue})
                   </button>
                 </div>
                 
                 <div className="flex gap-3 pt-3 mt-4 border-t border-gray-100">
-                  <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => setPayCreditBill(null)}>Cancel</button>
+                  <button type="button" className="btn-secondary flex-1 justify-center" onClick={() => setShowPayModal(false)}>Cancel</button>
                   <button type="submit" disabled={payingCredit} className="btn-primary flex-1 justify-center">
                     {payingCredit ? "Saving..." : "Record Payment"}
                   </button>

@@ -106,4 +106,53 @@ const deleteCustomer = async (req, res, next) => {
   }
 };
 
-module.exports = { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer };
+// PATCH /api/customers/:id/pay
+const payCustomerCredit = async (req, res, next) => {
+  const client = await db.getClient();
+  try {
+    const { amount } = req.body;
+    let amtToDistribute = parseFloat(amount);
+    if (!amtToDistribute || amtToDistribute <= 0) {
+      return res.status(400).json({ success: false, message: 'Payment amount must be a positive number' });
+    }
+
+    await client.query('BEGIN');
+
+    // Fetch all unpaid credit bills for this customer, oldest first
+    const unpaidBillsResult = await client.query(
+      `SELECT id, total, amount_paid FROM bills 
+       WHERE customer_id = $1 AND payment_method = 'credit' AND amount_paid < total 
+       ORDER BY created_at ASC FOR UPDATE`,
+      [req.params.id]
+    );
+
+    let distributed = 0;
+
+    for (const bill of unpaidBillsResult.rows) {
+      if (amtToDistribute <= 0) break;
+
+      const remainingOnBill = parseFloat(bill.total) - parseFloat(bill.amount_paid);
+      const paymentForThisBill = Math.min(remainingOnBill, amtToDistribute);
+
+      const newAmountPaid = parseFloat(bill.amount_paid) + paymentForThisBill;
+
+      await client.query(
+        'UPDATE bills SET amount_paid = $1 WHERE id = $2',
+        [newAmountPaid, bill.id]
+      );
+
+      amtToDistribute -= paymentForThisBill;
+      distributed += paymentForThisBill;
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: `Successfully distributed ₹${distributed.toLocaleString('en-IN')} across pending bills.` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    next(err);
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { getCustomers, getCustomerById, createCustomer, updateCustomer, deleteCustomer, payCustomerCredit };
