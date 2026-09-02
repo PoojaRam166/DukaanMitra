@@ -294,7 +294,7 @@ export default function Billing() {
       </div>
 
       {/* Right — Cart */}
-      <div className="w-full md:w-[340px] bg-white flex flex-col overflow-hidden border-t md:border-t-0 border-[#E4E7EC] max-h-[50vh] md:max-h-none">
+      <div className="w-full md:w-[340px] bg-white flex flex-col overflow-hidden border-t md:border-t-0 border-[#E4E7EC] max-h-[55vh] md:max-h-none pb-20 md:pb-0">
         <div className="p-4 border-b border-[#E4E7EC]">
           <h2 className="font-display font-extrabold text-base mb-3">Current Bill</h2>
           
