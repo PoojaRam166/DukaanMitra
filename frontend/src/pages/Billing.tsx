@@ -261,7 +261,7 @@ export default function Billing() {
   }
 
   return (
-    <div className="h-full flex flex-col md:flex-row fade-in overflow-hidden relative">
+    <div className="flex flex-col md:flex-row fade-in relative md:h-full md:overflow-hidden">
       {/* Left — Products */}
       <div className={`flex-1 flex flex-col border-r border-[#E4E7EC] overflow-hidden ${mobileView === "cart" ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-[#E4E7EC] bg-white">
@@ -309,7 +309,7 @@ export default function Billing() {
       </div>
 
       {/* Right — Cart */}
-      <div className={`w-full md:w-[340px] bg-white flex flex-col overflow-hidden border-t md:border-t-0 border-[#E4E7EC] pb-24 md:pb-0 ${mobileView === "products" ? "hidden md:flex" : "flex h-full md:max-h-none"}`}>
+      <div className={`w-full md:w-[340px] bg-white flex flex-col md:overflow-hidden border-t md:border-t-0 border-[#E4E7EC] pb-24 md:pb-0 ${mobileView === "products" ? "hidden md:flex" : "flex md:h-full md:max-h-none"}`}>
         <div className="p-4 border-b border-[#E4E7EC] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
