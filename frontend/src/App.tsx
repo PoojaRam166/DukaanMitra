@@ -97,6 +97,7 @@ function AppShell() {
   // Landing Page on first load and after a refresh, and a direct link
   // like `/dashboard` opens that page directly.
   const [page, setPageState] = useState<Page>(() => pageFromLocation());
+  const { user, loading } = useAuth();
 
   const navigate = React.useCallback((next: Page) => {
     const path = PAGE_TO_PATH[next];
@@ -112,6 +113,27 @@ function AppShell() {
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
+
+  // Auto-redirect based on auth state
+  React.useEffect(() => {
+    if (loading) return;
+    
+    const isPublicPage = page === "landing" || page === "login" || page === "register";
+    
+    if (user && isPublicPage) {
+      navigate("dashboard");
+    } else if (!user && !isPublicPage) {
+      navigate("login");
+    }
+  }, [user, loading, page, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
+        <div className="w-8 h-8 border-4 border-[#3B5BDB] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const appPages: Page[] = [
     "dashboard", "inventory", "billing", "customers",
