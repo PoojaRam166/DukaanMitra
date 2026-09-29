@@ -49,7 +49,7 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
         throw new Error("Please enter a valid 10-digit mobile number.");
       }
       const res = await authApi.forgotPassword(phoneDigits);
-      setSuccess(`OTP Sent! (Demo OTP: ${res.demo_otp})`);
+      setSuccess("OTP Sent! Please check your mobile messages.");
       setStep(2);
     } catch (err: any) {
       setError(err.message || 'Failed to send OTP');

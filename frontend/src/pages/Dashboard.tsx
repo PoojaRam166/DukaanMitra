@@ -179,21 +179,28 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
             </div>
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={data.top_products.map((item: any) => ({
-            name: item.name,
-            currentStock: item.stock || 0,
-            predictedDemand: Math.max(10, Math.floor(item.total_qty * 1.4))
-          }))} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-            <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }} />
-            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
-            <Bar dataKey="currentStock" name="Current Stock" fill="#94A3B8" radius={[4, 4, 0, 0]} barSize={20} />
-            <Bar dataKey="predictedDemand" name="Predicted Demand (AI)" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={20} />
-          </BarChart>
-        </ResponsiveContainer>
+        {data.top_products && data.top_products.length > 0 ? (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.top_products.map((item: any) => ({
+              name: item.name,
+              currentStock: item.stock || 0,
+              predictedDemand: Math.max(10, Math.floor(item.total_qty * 1.4))
+            }))} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }} />
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
+              <Bar dataKey="currentStock" name="Current Stock" fill="#94A3B8" radius={[4, 4, 0, 0]} barSize={20} />
+              <Bar dataKey="predictedDemand" name="Predicted Demand (AI)" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={20} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[220px] text-gray-400 text-sm">
+            <Lightbulb size={32} className="text-gray-300 mb-2" />
+            <p>Not enough sales data to generate a forecast.</p>
+          </div>
+        )}
       </div>
 
       {/* Charts row */}

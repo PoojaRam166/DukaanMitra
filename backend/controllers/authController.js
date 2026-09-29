@@ -98,11 +98,16 @@ const forgotPassword = async (req, res, next) => {
     );
 
     // In a real app, integrate an SMS gateway here (e.g. Twilio). 
-    // For this portfolio demo, we return the OTP to the client to simulate SMS reception.
+    // Since we don't have paid API keys configured, we simulate the SMS by logging it to the console.
+    console.log(`\n=========================================`);
+    console.log(`💬 [SMS GATEWAY SIMULATOR]`);
+    console.log(`📱 To: +91${phone}`);
+    console.log(`✉️ Message: Your DukaanMitra password reset OTP is ${otp}. It expires in 15 minutes.`);
+    console.log(`=========================================\n`);
+
     res.json({ 
       success: true, 
-      message: 'OTP sent successfully (Simulated)', 
-      demo_otp: otp 
+      message: 'OTP sent successfully'
     });
   } catch (err) {
     next(err);
