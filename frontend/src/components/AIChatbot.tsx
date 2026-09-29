@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Bot, User, Loader2 } from "lucide-react";
+import { MessageSquare, X, Send, Bot, User, Loader2, Mic, MicOff } from "lucide-react";
 import { chatApi } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 
@@ -11,7 +11,36 @@ export function AIChatbot() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const speak = (text: string, langCode: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = langCode === 'te' ? 'te-IN' : 'en-US';
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Voice Input.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = language === 'te' ? 'te-IN' : 'en-US';
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+    };
+    recognition.start();
+  };
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -31,6 +60,7 @@ export function AIChatbot() {
     try {
       const res = await chatApi.sendMessage(userMsg, language);
       setMessages((prev) => [...prev, { role: "bot", content: res.data }]);
+      speak(res.data, language || 'en');
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: "bot", content: "Sorry, I had trouble connecting to the backend. Please try again." }]);
     } finally {
@@ -118,12 +148,22 @@ export function AIChatbot() {
           {/* Input */}
           <div className="p-4 bg-white border-t border-gray-100">
             <form onSubmit={handleSend} className="flex gap-2">
+              <button
+                type="button"
+                onClick={isListening ? undefined : startListening}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors flex-shrink-0 ${
+                  isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title="Speak"
+              >
+                {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+              </button>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about sales, inventory..."
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                placeholder={language === 'te' ? "మైక్‌పై మాట్లాడండి లేదా టైప్ చేయండి..." : "Ask about sales, inventory..."}
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-0"
               />
               <button
                 type="submit"
