@@ -78,9 +78,9 @@ button:disabled { cursor: not-allowed; }
   border: 1px solid #E4E7EC;
   border-radius: 12px;
   padding: 20px;
-
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
 
 .btn-primary {
   display: inline-flex;
@@ -98,8 +98,8 @@ button:disabled { cursor: not-allowed; }
   transition: all 0.15s ease;
   min-height: 44px; /* Mobile friendly touch target */
 }
-.btn-primary:hover { background: #3451C7; box-shadow: 0 2px 8px rgba(59,91,219,0.3); }
-.btn-primary:active { transform: scale(0.98); }
+.btn-primary:hover { background: #3451C7; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,91,219,0.4); }
+.btn-primary:active { transform: scale(0.98) translateY(0); }
 
 .btn-secondary {
   display: inline-flex;
@@ -117,7 +117,8 @@ button:disabled { cursor: not-allowed; }
   transition: all 0.15s ease;
   min-height: 44px; /* Mobile friendly touch target */
 }
-.btn-secondary:hover { background: #F9FAFB; border-color: #9CA3AF; }
+.btn-secondary:hover { background: #F9FAFB; border-color: #9CA3AF; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.btn-secondary:active { transform: scale(0.98) translateY(0); }
 
 
 .input-field {
@@ -136,7 +137,8 @@ button:disabled { cursor: not-allowed; }
 .input-field:focus { border-color: #3B5BDB; box-shadow: 0 0 0 3px rgba(59,91,219,0.1); }
 .input-field::placeholder { color: #9CA3AF; font-size: 14px; }
 
-.table-row:hover { background: #F9FAFB; }
+.table-row { transition: background-color 0.15s ease; }
+.table-row:hover { background: #F3F4F6; }
 
 .badge {
   display: inline-flex;

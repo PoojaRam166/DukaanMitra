@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import type { Page } from "../App";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Legend
 } from "recharts";
 import {
   TrendingUp, TrendingDown, Package, AlertTriangle, Receipt, DollarSign,
-  Plus, ArrowRight, Calendar,
+  Plus, ArrowRight, Calendar, Lightbulb,
 } from "lucide-react";
 import { dashboardApi } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
@@ -148,6 +149,38 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
             </div>
           );
         })}
+      </div>
+
+      {/* AI Predictive Analytics */}
+      <div className="bg-white rounded-xl border border-[#E4E7EC] p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <Lightbulb size={20} className="text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="font-display font-semibold text-base text-[#1E2A3B]">AI Demand Forecast</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Predicted demand for top items over the next 7 days</p>
+            </div>
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={[
+            { name: "Milk (1L)", currentStock: 45, predictedDemand: 80 },
+            { name: "Bread", currentStock: 20, predictedDemand: 65 },
+            { name: "Eggs (Dozen)", currentStock: 60, predictedDemand: 55 },
+            { name: "Rice (5kg)", currentStock: 15, predictedDemand: 25 },
+            { name: "Cooking Oil", currentStock: 30, predictedDemand: 40 },
+          ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+            <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }} />
+            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
+            <Bar dataKey="currentStock" name="Current Stock" fill="#94A3B8" radius={[4, 4, 0, 0]} barSize={20} />
+            <Bar dataKey="predictedDemand" name="Predicted Demand (AI)" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={20} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Charts row */}

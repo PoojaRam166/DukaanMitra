@@ -9,6 +9,7 @@ import {
 import { authApi, resolveAssetUrl, notificationApi, productApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
+import { AIChatbot } from "./AIChatbot";
 
 const navItems = [
   { id: "dashboard" as Page, key: "dashboard", icon: LayoutDashboard },
@@ -335,8 +336,9 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
           </header>
 
           {/* Content */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto relative">
             {children}
+            <AIChatbot />
           </main>
         </div>
       </div>

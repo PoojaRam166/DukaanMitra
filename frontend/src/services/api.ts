@@ -135,3 +135,8 @@ export const settingsApi = {
     return requestForm<any>('POST', '/settings/avatar', formData);
   },
 };
+
+// Chatbot
+export const chatApi = {
+  sendMessage: (message: string) => request<any>('POST', '/chat', { message }),
+};
