@@ -3,6 +3,7 @@ const db = require('../config/db');
 
 exports.sendMessage = async (req, res, next) => {
   let stats = { total_sales: 0, low_stock_items: 0, total_products: 0, total_customers: 0 };
+  let customerNames = '';
   
   try {
     const { message, language } = req.body;
@@ -19,6 +20,9 @@ exports.sendMessage = async (req, res, next) => {
         (SELECT COUNT(*) FROM customers WHERE user_id = $1) AS total_customers
     `, [req.user.id]);
     stats = statsRes.rows[0] || stats;
+
+    const customersRes = await db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 10', [req.user.id]);
+    customerNames = customersRes.rows.map(r => r.name).join(', ');
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -65,6 +69,14 @@ exports.sendMessage = async (req, res, next) => {
     } else if (msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు')) {
       enResponse = `You currently have a total of ${stats.total_products || 0} distinct products registered in your shop's inventory.`;
       teResponse = `ప్రస్తుతం మీ దుకాణం ఇన్వెంటరీలో మొత్తం ${stats.total_products || 0} విభిన్న ఉత్పత్తులు నమోదు చేయబడ్డాయి.`;
+    } else if ((msgLower.includes('name') || msgLower.includes('పేరు')) && (msgLower.includes('customer') || msgLower.includes('client') || msgLower.includes('కస్టమర్'))) {
+      if (customerNames) {
+        enResponse = `Here are some of your registered customers: ${customerNames}.`;
+        teResponse = `మీ నమోదిత కస్టమర్ల పేర్లు: ${customerNames}.`;
+      } else {
+        enResponse = `You don't have any customers registered yet.`;
+        teResponse = `మీకు ఇంకా ఏ కస్టమర్లు నమోదు కాలేదు.`;
+      }
     } else if (msgLower.includes('customer') || msgLower.includes('client') || msgLower.includes('కస్టమర్లు') || msgLower.includes('ఖాతాదారులు')) {
       enResponse = `You have built a great loyal base of ${stats.total_customers || 0} registered customers!`;
       teResponse = `మీరు ${stats.total_customers || 0} మంది నమోదిత కస్టమర్లతో గొప్ప పునాదిని నిర్మించుకున్నారు!`;
