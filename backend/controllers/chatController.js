@@ -42,13 +42,25 @@ exports.sendMessage = async (req, res, next) => {
     console.error("Gemini API Error:", error.message);
     
     // Fallback response for invalid API keys so the UI doesn't break for the user
-    const { language } = req.body;
-    let fallbackMsg = `Based on your store data, your total all-time sales are ₹${req.user.total_sales || 0}. Keep up the great work! Let me know if you need any other business insights.`;
+    // Fallback Mock AI Engine (Executes when API key is invalid/missing)
+    const { language, message: userMsg } = req.body;
+    const msgLower = (userMsg || '').toLowerCase();
     
-    if (language === 'te') {
-      fallbackMsg = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}. ఇలాగే మంచి పనిని కొనసాగించండి! మీకు వ్యాపారానికి సంబంధించిన ఏవైనా ఇతర వివరాలు కావాలంటే దయచేసి అడగండి.`;
+    let enResponse = `Based on your store data, your total all-time sales are ₹${req.user.total_sales || 0}. Keep up the great work!`;
+    let teResponse = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}. ఇలాగే మంచి పనిని కొనసాగించండి!`;
+
+    // Keyword matching for intelligent mock responses
+    if (msgLower.includes('hi') || msgLower.includes('hello') || msgLower.includes('hey') || msgLower.includes('నమస్తే')) {
+      enResponse = "Hello! How can I help you manage your store today?";
+      teResponse = "నమస్తే! ఈరోజు మీ స్టోర్‌ను నిర్వహించడంలో నేను మీకు ఎలా సహాయపడగలను?";
+    } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha')) {
+      enResponse = `You currently have ${req.user.low_stock_items || 0} items running low on stock. Please check the inventory page!`;
+      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${req.user.low_stock_items || 0} వస్తువుల స్టాక్ తక్కువగా ఉంది. దయచేసి ఇన్వెంటరీ పేజీని తనిఖీ చేయండి!`;
+    } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('అమ్మకాలు') || msgLower.includes('లాభం')) {
+      enResponse = `Your store is doing great! Your all-time sales are ₹${req.user.total_sales || 0}.`;
+      teResponse = `మీ స్టోర్ చాలా బాగా నడుస్తోంది! మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}.`;
     }
-    
-    res.json({ success: true, data: fallbackMsg });
+
+    res.json({ success: true, data: language === 'te' ? teResponse : enResponse });
   }
 };
