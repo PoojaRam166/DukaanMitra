@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, Send, Bot, User, Loader2 } from "lucide-react";
 import { chatApi } from "../services/api";
+import { useSettings } from "../context/SettingsContext";
 
 export function AIChatbot() {
+  const { language } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: "bot" | "user"; content: string }[]>([
-    { role: "bot", content: "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." }
+    { role: "bot", content: language === 'te' ? "నమస్తే! నేను మీ AI దుకాణమిత్ర సహాయకుడిని. నేను మీకు విక్రయాలను విశ్లేషించడంలో, డిమాండ్‌ను అంచనా వేయడంలో లేదా మీ ఇన్వెంటరీ గురించిన ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయపడగలను." : "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +29,7 @@ export function AIChatbot() {
     setIsLoading(true);
 
     try {
-      const res = await chatApi.sendMessage(userMsg);
+      const res = await chatApi.sendMessage(userMsg, language);
       setMessages((prev) => [...prev, { role: "bot", content: res.data }]);
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: "bot", content: "Sorry, I had trouble connecting to the backend. Please try again." }]);

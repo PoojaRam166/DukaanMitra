@@ -138,5 +138,5 @@ export const settingsApi = {
 
 // Chatbot
 export const chatApi = {
-  sendMessage: (message: string) => request<any>('POST', '/chat', { message }),
+  sendMessage: (message: string, language?: string) => request<any>('POST', '/chat', { message, language }),
 };

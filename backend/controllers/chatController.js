@@ -3,7 +3,7 @@ const db = require('../config/db');
 
 exports.sendMessage = async (req, res, next) => {
   try {
-    const { message } = req.body;
+    const { message, language } = req.body;
     
     if (!process.env.GEMINI_API_KEY) {
       return res.json({ success: true, data: "⚠️ Gemini API key missing." });
@@ -20,7 +20,7 @@ exports.sendMessage = async (req, res, next) => {
     `, [req.user.id]);
     const stats = statsRes.rows[0] || { total_sales: 0, low_stock_items: 0 };
 
-    const prompt = `
+    let prompt = `
       You are DukaanMitra AI, a highly intelligent virtual assistant for a kirana store owner in India. 
       You are connected to their actual live database.
       Store Context: The store's all-time sales are ₹${stats.total_sales}, and they currently have ${stats.low_stock_items} items running low on stock.
@@ -29,6 +29,10 @@ exports.sendMessage = async (req, res, next) => {
       
       Provide a brief, professional, and helpful response. Keep it concise (under 3 sentences). If they ask about sales or stock, use the context provided.
     `;
+
+    if (language === 'te') {
+      prompt += `\nCRITICAL INSTRUCTION: You MUST reply entirely in the Telugu language (తెలుగు). Do not use English.`;
+    }
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
