@@ -47,25 +47,25 @@ exports.sendMessage = async (req, res, next) => {
     const { language, message: userMsg } = req.body;
     const msgLower = (userMsg || '').toLowerCase();
     
-    let enResponse = `Based on your store data, your total all-time sales are ₹${req.user.total_sales || 0}. Keep up the great work!`;
-    let teResponse = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}. ఇలాగే మంచి పనిని కొనసాగించండి!`;
+    let enResponse = `Based on your store data, your total all-time sales are ₹${stats.total_sales || 0}. Keep up the great work!`;
+    let teResponse = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${stats.total_sales || 0}. ఇలాగే మంచి పనిని కొనసాగించండి!`;
 
     // Keyword matching for intelligent mock responses
     if (msgLower.includes('hi') || msgLower.includes('hello') || msgLower.includes('hey') || msgLower.includes('నమస్తే') || msgLower.includes('హలో')) {
       enResponse = "Hello! How can I help you manage your Kirana store today?";
       teResponse = "నమస్తే! ఈరోజు మీ కిరాణా స్టోర్‌ను నిర్వహించడంలో నేను మీకు ఎలా సహాయపడగలను?";
     } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha')) {
-      enResponse = `You currently have ${req.user.low_stock_items || 0} items running dangerously low on stock. Please check the inventory page to restock them!`;
-      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${req.user.low_stock_items || 0} వస్తువుల స్టాక్ ప్రమాదకరంగా తక్కువగా ఉంది. దయచేసి వాటిని రీస్టాక్ చేయడానికి ఇన్వెంటరీ పేజీని తనిఖీ చేయండి!`;
+      enResponse = `You currently have ${stats.low_stock_items || 0} items running dangerously low on stock. Please check the inventory page to restock them!`;
+      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${stats.low_stock_items || 0} వస్తువుల స్టాక్ ప్రమాదకరంగా తక్కువగా ఉంది. దయచేసి వాటిని రీస్టాక్ చేయడానికి ఇన్వెంటరీ పేజీని తనిఖీ చేయండి!`;
     } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('bill') || msgLower.includes('అమ్మకాలు') || msgLower.includes('లాభం') || msgLower.includes('బిల్లు')) {
-      enResponse = `Your store is doing fantastic! Your all-time total sales are ₹${req.user.total_sales || 0}. Keep it up!`;
-      teResponse = `మీ స్టోర్ చాలా అద్భుతంగా నడుస్తోంది! మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}. ఇలాగే కొనసాగించండి!`;
+      enResponse = `Your store is doing fantastic! Your all-time total sales are ₹${stats.total_sales || 0}. Keep it up!`;
+      teResponse = `మీ స్టోర్ చాలా అద్భుతంగా నడుస్తోంది! మీ మొత్తం విక్రయాలు ₹${stats.total_sales || 0}. ఇలాగే కొనసాగించండి!`;
     } else if (msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు')) {
-      enResponse = `You currently have a total of ${req.user.total_products || 0} distinct products registered in your shop's inventory.`;
-      teResponse = `ప్రస్తుతం మీ దుకాణం ఇన్వెంటరీలో మొత్తం ${req.user.total_products || 0} విభిన్న ఉత్పత్తులు నమోదు చేయబడ్డాయి.`;
+      enResponse = `You currently have a total of ${stats.total_products || 0} distinct products registered in your shop's inventory.`;
+      teResponse = `ప్రస్తుతం మీ దుకాణం ఇన్వెంటరీలో మొత్తం ${stats.total_products || 0} విభిన్న ఉత్పత్తులు నమోదు చేయబడ్డాయి.`;
     } else if (msgLower.includes('customer') || msgLower.includes('client') || msgLower.includes('కస్టమర్లు') || msgLower.includes('ఖాతాదారులు')) {
-      enResponse = `You have built a great loyal base of ${req.user.total_customers || 0} registered customers!`;
-      teResponse = `మీరు ${req.user.total_customers || 0} మంది నమోదిత కస్టమర్లతో గొప్ప పునాదిని నిర్మించుకున్నారు!`;
+      enResponse = `You have built a great loyal base of ${stats.total_customers || 0} registered customers!`;
+      teResponse = `మీరు ${stats.total_customers || 0} మంది నమోదిత కస్టమర్లతో గొప్ప పునాదిని నిర్మించుకున్నారు!`;
     } else if (msgLower.includes('who are you') || msgLower.includes('your name') || msgLower.includes('నీవు ఎవరు') || msgLower.includes('నీ పేరు')) {
       enResponse = "I am DukaanMitra AI, your personal Smart Business Assistant built specifically for Kirana store owners!";
       teResponse = "నేను మీ దుకాణమిత్ర AI ని, కిరాణా స్టోర్ యజమానుల కోసం ప్రత్యేకంగా రూపొందించబడిన మీ వ్యక్తిగత స్మార్ట్ బిజినెస్ అసిస్టెంట్!";
