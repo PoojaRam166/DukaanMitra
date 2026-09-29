@@ -8,7 +8,7 @@ import {
   TrendingUp, TrendingDown, Package, AlertTriangle, Receipt, DollarSign,
   Plus, ArrowRight, Calendar, Lightbulb,
 } from "lucide-react";
-import { dashboardApi } from "../services/api";
+import { dashboardApi, salesApi } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 
 export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => void }) {
@@ -23,6 +23,8 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
 
   const filters = [t("filterToday"), t("filter7Days"), t("filter30Days"), t("filterCustom")];
   const [activeFilterIdx, setActiveFilterIdx] = useState(1);
+  const [salesTrend, setSalesTrend] = useState<any[]>([]);
+  const [salesTrendLoading, setSalesTrendLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
@@ -46,6 +48,19 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
     const timer = setInterval(() => setNow(new Date()), 60 * 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Fetch chart data dynamically when filter changes
+  useEffect(() => {
+    const apiFilters = ["Today", "7 Days", "30 Days", "7 Days"];
+    setSalesTrendLoading(true);
+    salesApi.get(apiFilters[activeFilterIdx]).then(res => {
+      setSalesTrend(res.data.trendData);
+      setSalesTrendLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setSalesTrendLoading(false);
+    });
+  }, [activeFilterIdx]);
 
   const hour = now.getHours();
   const greeting = hour < 12 ? t("goodMorning") : hour < 17 ? t("goodAfternoon") : t("goodEvening");
@@ -203,19 +218,25 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={data.daily_sales.map((s: any) => ({ day: s.day, sales: parseFloat(s.sales) }))}>
-              <defs>
-                <linearGradient id="sGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3B5BDB" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="#3B5BDB" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v) => [`₹${Number(v).toLocaleString("en-IN")}`, "Sales"]} contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }} />
-              <Area type="monotone" dataKey="sales" stroke="#3B5BDB" strokeWidth={2} fill="url(#sGrad)" />
-            </AreaChart>
+            {salesTrendLoading ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-[#3B5BDB] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <AreaChart data={salesTrend}>
+                <defs>
+                  <linearGradient id="sGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B5BDB" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#3B5BDB" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(v) => [`₹${Number(v).toLocaleString("en-IN")}`, "Sales"]} contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }} />
+                <Area type="monotone" dataKey="sales" stroke="#3B5BDB" strokeWidth={2} fill="url(#sGrad)" />
+              </AreaChart>
+            )}
           </ResponsiveContainer>
         </div>
 
