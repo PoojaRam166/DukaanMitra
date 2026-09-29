@@ -4,7 +4,7 @@ import { chatApi } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 
 export function AIChatbot() {
-  const { language } = useSettings();
+  const { lang: language } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: "bot" | "user"; content: string }[]>([
     { role: "bot", content: language === 'te' ? "నమస్తే! నేను మీ AI దుకాణమిత్ర సహాయకుడిని. నేను మీకు విక్రయాలను విశ్లేషించడంలో, డిమాండ్‌ను అంచనా వేయడంలో లేదా మీ ఇన్వెంటరీ గురించిన ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయపడగలను." : "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." }
@@ -13,6 +13,12 @@ export function AIChatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messages.length === 1) {
+      setMessages([{ role: "bot", content: language === 'te' ? "నమస్తే! నేను మీ AI దుకాణమిత్ర సహాయకుడిని. నేను మీకు విక్రయాలను విశ్లేషించడంలో, డిమాండ్‌ను అంచనా వేయడంలో లేదా మీ ఇన్వెంటరీ గురించిన ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయపడగలను." : "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." }]);
+    }
+  }, [language]);
 
   const speak = (text: string, langCode: string) => {
     if ('speechSynthesis' in window) {
