@@ -1,28 +1,41 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const db = require('../config/db');
+
 exports.sendMessage = async (req, res, next) => {
   try {
     const { message } = req.body;
     
-    // Mocking an AI backend response (like an LLM would)
-    let reply = "I can help you with sales predictions, inventory management, and profit insights. What would you like to know?";
-    
-    if (message) {
-      const lcMessage = message.toLowerCase();
-      if (lcMessage.includes("sales") || lcMessage.includes("predict")) {
-        reply = "Based on recent data, I predict a 15% increase in sales this weekend.";
-      } else if (lcMessage.includes("stock") || lcMessage.includes("inventory")) {
-        reply = "You are running low on some top-selling items. I recommend checking the inventory page for restock suggestions.";
-      } else if (lcMessage.includes("profit")) {
-        reply = "Your net profit margin is currently 22%, which is 2% higher than last month. Great job!";
-      } else {
-        reply = "I'm connected to the real backend! I processed: '" + message + "'. (This is a mock LLM response).";
-      }
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({ success: true, data: "⚠️ Gemini API key missing." });
     }
 
-    // Add a slight delay to simulate processing time
-    setTimeout(() => {
-      res.json({ success: true, data: reply });
-    }, 1000);
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Fetch store context for the AI prompt
+    const statsRes = await db.query(`
+      SELECT 
+        (SELECT COALESCE(SUM(total), 0) FROM bills WHERE user_id = $1) AS total_sales,
+        (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items
+    `, [req.user.id]);
+    const stats = statsRes.rows[0] || { total_sales: 0, low_stock_items: 0 };
+
+    const prompt = `
+      You are DukaanMitra AI, a highly intelligent virtual assistant for a kirana store owner in India. 
+      You are connected to their actual live database.
+      Store Context: The store's all-time sales are ₹${stats.total_sales}, and they currently have ${stats.low_stock_items} items running low on stock.
+      
+      The store owner asks: "${message}"
+      
+      Provide a brief, professional, and helpful response. Keep it concise (under 3 sentences). If they ask about sales or stock, use the context provided.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    res.json({ success: true, data: text });
   } catch (error) {
-    next(error);
+    console.error("Gemini API Error:", error);
+    res.status(500).json({ success: false, message: "AI generation failed." });
   }
 };
