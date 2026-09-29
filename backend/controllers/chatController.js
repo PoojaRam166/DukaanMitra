@@ -12,11 +12,12 @@ exports.sendMessage = async (req, res, next) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Fetch store context for the AI prompt
     const statsRes = await db.query(`
       SELECT 
         (SELECT COALESCE(SUM(total), 0) FROM bills WHERE user_id = $1) AS total_sales,
-        (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items
+        (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items,
+        (SELECT COUNT(*) FROM products WHERE user_id = $1) AS total_products,
+        (SELECT COUNT(*) FROM customers WHERE user_id = $1) AS total_customers
     `, [req.user.id]);
     const stats = statsRes.rows[0] || { total_sales: 0, low_stock_items: 0 };
 
@@ -50,15 +51,27 @@ exports.sendMessage = async (req, res, next) => {
     let teResponse = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}. ఇలాగే మంచి పనిని కొనసాగించండి!`;
 
     // Keyword matching for intelligent mock responses
-    if (msgLower.includes('hi') || msgLower.includes('hello') || msgLower.includes('hey') || msgLower.includes('నమస్తే')) {
-      enResponse = "Hello! How can I help you manage your store today?";
-      teResponse = "నమస్తే! ఈరోజు మీ స్టోర్‌ను నిర్వహించడంలో నేను మీకు ఎలా సహాయపడగలను?";
+    if (msgLower.includes('hi') || msgLower.includes('hello') || msgLower.includes('hey') || msgLower.includes('నమస్తే') || msgLower.includes('హలో')) {
+      enResponse = "Hello! How can I help you manage your Kirana store today?";
+      teResponse = "నమస్తే! ఈరోజు మీ కిరాణా స్టోర్‌ను నిర్వహించడంలో నేను మీకు ఎలా సహాయపడగలను?";
     } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha')) {
-      enResponse = `You currently have ${req.user.low_stock_items || 0} items running low on stock. Please check the inventory page!`;
-      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${req.user.low_stock_items || 0} వస్తువుల స్టాక్ తక్కువగా ఉంది. దయచేసి ఇన్వెంటరీ పేజీని తనిఖీ చేయండి!`;
-    } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('అమ్మకాలు') || msgLower.includes('లాభం')) {
-      enResponse = `Your store is doing great! Your all-time sales are ₹${req.user.total_sales || 0}.`;
-      teResponse = `మీ స్టోర్ చాలా బాగా నడుస్తోంది! మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}.`;
+      enResponse = `You currently have ${req.user.low_stock_items || 0} items running dangerously low on stock. Please check the inventory page to restock them!`;
+      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${req.user.low_stock_items || 0} వస్తువుల స్టాక్ ప్రమాదకరంగా తక్కువగా ఉంది. దయచేసి వాటిని రీస్టాక్ చేయడానికి ఇన్వెంటరీ పేజీని తనిఖీ చేయండి!`;
+    } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('bill') || msgLower.includes('అమ్మకాలు') || msgLower.includes('లాభం') || msgLower.includes('బిల్లు')) {
+      enResponse = `Your store is doing fantastic! Your all-time total sales are ₹${req.user.total_sales || 0}. Keep it up!`;
+      teResponse = `మీ స్టోర్ చాలా అద్భుతంగా నడుస్తోంది! మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}. ఇలాగే కొనసాగించండి!`;
+    } else if (msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు')) {
+      enResponse = `You currently have a total of ${req.user.total_products || 0} distinct products registered in your shop's inventory.`;
+      teResponse = `ప్రస్తుతం మీ దుకాణం ఇన్వెంటరీలో మొత్తం ${req.user.total_products || 0} విభిన్న ఉత్పత్తులు నమోదు చేయబడ్డాయి.`;
+    } else if (msgLower.includes('customer') || msgLower.includes('client') || msgLower.includes('కస్టమర్లు') || msgLower.includes('ఖాతాదారులు')) {
+      enResponse = `You have built a great loyal base of ${req.user.total_customers || 0} registered customers!`;
+      teResponse = `మీరు ${req.user.total_customers || 0} మంది నమోదిత కస్టమర్లతో గొప్ప పునాదిని నిర్మించుకున్నారు!`;
+    } else if (msgLower.includes('who are you') || msgLower.includes('your name') || msgLower.includes('నీవు ఎవరు') || msgLower.includes('నీ పేరు')) {
+      enResponse = "I am DukaanMitra AI, your personal Smart Business Assistant built specifically for Kirana store owners!";
+      teResponse = "నేను మీ దుకాణమిత్ర AI ని, కిరాణా స్టోర్ యజమానుల కోసం ప్రత్యేకంగా రూపొందించబడిన మీ వ్యక్తిగత స్మార్ట్ బిజినెస్ అసిస్టెంట్!";
+    } else if (msgLower.includes('help') || msgLower.includes('support') || msgLower.includes('సహాయం') || msgLower.includes('సపోర్ట్')) {
+      enResponse = "I can help you analyze your total sales, track your low-stock inventory, or provide insights into your products and customers. Just ask!";
+      teResponse = "నేను మీ మొత్తం విక్రయాలను విశ్లేషించడంలో, మీ తక్కువ-స్టాక్ ఇన్వెంటరీని ట్రాక్ చేయడంలో లేదా మీ ఉత్పత్తులు మరియు కస్టమర్‌ల గురించి సమాచారం అందించడంలో సహాయపడగలను. అడగండి!";
     }
 
     res.json({ success: true, data: language === 'te' ? teResponse : enResponse });
