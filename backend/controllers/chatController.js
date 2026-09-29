@@ -4,6 +4,7 @@ const db = require('../config/db');
 exports.sendMessage = async (req, res, next) => {
   let stats = { total_sales: 0, low_stock_items: 0, total_products: 0, total_customers: 0 };
   let customerNames = '';
+  let productNames = '';
   
   try {
     const { message, language } = req.body;
@@ -23,6 +24,9 @@ exports.sendMessage = async (req, res, next) => {
 
     const customersRes = await db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 10', [req.user.id]);
     customerNames = customersRes.rows.map(r => r.name).join(', ');
+
+    const productsRes = await db.query('SELECT name FROM products WHERE user_id = $1 LIMIT 10', [req.user.id]);
+    productNames = productsRes.rows.map(r => r.name).join(', ');
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -60,6 +64,14 @@ exports.sendMessage = async (req, res, next) => {
     if (msgLower.includes('hi') || msgLower.includes('hello') || msgLower.includes('hey') || msgLower.includes('నమస్తే') || msgLower.includes('హలో')) {
       enResponse = "Hello! How can I help you manage your Kirana store today?";
       teResponse = "నమస్తే! ఈరోజు మీ కిరాణా స్టోర్‌ను నిర్వహించడంలో నేను మీకు ఎలా సహాయపడగలను?";
+    } else if ((msgLower.includes('name') || msgLower.includes('what are') || msgLower.includes('ఏమిటి') || msgLower.includes('పేరు')) && (msgLower.includes('stock') || msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు'))) {
+      if (productNames) {
+        enResponse = `Here are some of the products currently in your inventory: ${productNames}.`;
+        teResponse = `ప్రస్తుతం మీ ఇన్వెంటరీలో ఉన్న కొన్ని ఉత్పత్తులు ఇవిగో: ${productNames}.`;
+      } else {
+        enResponse = `You don't have any products in your inventory yet.`;
+        teResponse = `మీ ఇన్వెంటరీలో ఇంకా ఎటువంటి ఉత్పత్తులు లేవు.`;
+      }
     } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha')) {
       enResponse = `You currently have ${stats.low_stock_items || 0} items running dangerously low on stock. Please check the inventory page to restock them!`;
       teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${stats.low_stock_items || 0} వస్తువుల స్టాక్ ప్రమాదకరంగా తక్కువగా ఉంది. దయచేసి వాటిని రీస్టాక్ చేయడానికి ఇన్వెంటరీ పేజీని తనిఖీ చేయండి!`;
