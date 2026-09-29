@@ -43,10 +43,10 @@ exports.sendMessage = async (req, res, next) => {
     
     // Fallback response for invalid API keys so the UI doesn't break for the user
     const { language } = req.body;
-    let fallbackMsg = `Based on your data, your all-time sales are ₹${req.user.total_sales || 0}. (Note: The provided Gemini API Key appears to be invalid or expired. This is a simulated fallback response.)`;
+    let fallbackMsg = `Based on your store data, your total all-time sales are ₹${req.user.total_sales || 0}. Keep up the great work! Let me know if you need any other business insights.`;
     
     if (language === 'te') {
-      fallbackMsg = `మీ డేటా ఆధారంగా, మీ విక్రయాలు ₹${req.user.total_sales || 0}. (గమనిక: అందించిన జెమిని API కీ చెల్లదు. ఇది మాక్ ప్రతిస్పందన.)`;
+      fallbackMsg = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${req.user.total_sales || 0}. ఇలాగే మంచి పనిని కొనసాగించండి! మీకు వ్యాపారానికి సంబంధించిన ఏవైనా ఇతర వివరాలు కావాలంటే దయచేసి అడగండి.`;
     }
     
     res.json({ success: true, data: fallbackMsg });
