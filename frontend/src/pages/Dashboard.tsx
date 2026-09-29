@@ -165,13 +165,11 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
           </div>
         </div>
         <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={[
-            { name: "Milk (1L)", currentStock: 45, predictedDemand: 80 },
-            { name: "Bread", currentStock: 20, predictedDemand: 65 },
-            { name: "Eggs (Dozen)", currentStock: 60, predictedDemand: 55 },
-            { name: "Rice (5kg)", currentStock: 15, predictedDemand: 25 },
-            { name: "Cooking Oil", currentStock: 30, predictedDemand: 40 },
-          ]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart data={data.top_products.map((item: any) => ({
+            name: item.name,
+            currentStock: item.stock || 0,
+            predictedDemand: Math.max(10, Math.floor(item.total_qty * 1.4))
+          }))} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
             <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />

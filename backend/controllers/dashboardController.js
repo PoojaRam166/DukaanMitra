@@ -49,10 +49,10 @@ const getDashboard = async (req, res, next) => {
         ),
         // Top 5 selling products by quantity
         db.query(`
-          SELECT p.name, SUM(bi.quantity) AS total_qty, SUM(bi.subtotal) AS total_revenue
+          SELECT p.name, p.stock, SUM(bi.quantity) AS total_qty, SUM(bi.subtotal) AS total_revenue
           FROM bill_items bi JOIN products p ON p.id = bi.product_id
           WHERE p.user_id = $1
-          GROUP BY p.id, p.name ORDER BY total_qty DESC LIMIT 5
+          GROUP BY p.id, p.name, p.stock ORDER BY total_qty DESC LIMIT 5
         `, [req.user.id]),
         // Daily sales for the last 7 days
         db.query(`
