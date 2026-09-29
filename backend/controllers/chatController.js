@@ -2,15 +2,14 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const db = require('../config/db');
 
 exports.sendMessage = async (req, res, next) => {
+  let stats = { total_sales: 0, low_stock_items: 0, total_products: 0, total_customers: 0 };
+  
   try {
     const { message, language } = req.body;
     
     if (!process.env.GEMINI_API_KEY) {
       return res.json({ success: true, data: "⚠️ Gemini API key missing." });
     }
-
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const statsRes = await db.query(`
       SELECT 
@@ -19,7 +18,10 @@ exports.sendMessage = async (req, res, next) => {
         (SELECT COUNT(*) FROM products WHERE user_id = $1) AS total_products,
         (SELECT COUNT(*) FROM customers WHERE user_id = $1) AS total_customers
     `, [req.user.id]);
-    const stats = statsRes.rows[0] || { total_sales: 0, low_stock_items: 0 };
+    stats = statsRes.rows[0] || stats;
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     let prompt = `
       You are DukaanMitra AI, a highly intelligent virtual assistant for a kirana store owner in India. 
