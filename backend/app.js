@@ -76,7 +76,6 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/portal', portalRoutes);
-app.use('/api/dev', require('./routes/devRoutes'));
 
 // 404 handler
 app.use((req, res) => {

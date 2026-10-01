@@ -1,8 +1,0 @@
-const express=require('express');
-const router=express.Router();
-const db=require('../config/db');
-router.get('/wipe-db', async (req,res)=>{
-  await db.query('TRUNCATE TABLE users, products, customers, bills, bill_items, expenses, notifications RESTART IDENTITY CASCADE;');
-  res.json({msg:'wiped'});
-});
-module.exports=router;
