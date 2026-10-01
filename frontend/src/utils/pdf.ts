@@ -54,7 +54,7 @@ export function buildPdf({ title, subtitle, sections }: PdfOptions): jsPDF {
     autoTable(doc, {
       startY: cursorY,
       head: [section.columns],
-      body: section.rows.map((row) => row.map((cell) => (cell === null || cell === undefined ? "" : String(cell)))),
+      body: section.rows.map((row) => row.map((cell) => (cell === null || cell === undefined ? "" : String(cell).replace(/₹/g, 'Rs. ')))),
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: BRAND_COLOR, textColor: 255 },
       alternateRowStyles: { fillColor: [247, 248, 250] },
