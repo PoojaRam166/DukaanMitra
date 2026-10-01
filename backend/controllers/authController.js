@@ -52,7 +52,7 @@ const register = async (req, res, next) => {
 
     // Create default shop settings for the new user
     await db.query(
-      'INSERT INTO shop_settings (user_id, shop_name, address) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO NOTHING',
+      'INSERT INTO shop_settings (user_id, shop_name, address) VALUES ($1, $2, $3)',
       [user.id, shopName, address || null]
     );
 
