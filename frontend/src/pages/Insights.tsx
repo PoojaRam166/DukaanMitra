@@ -107,15 +107,17 @@ export default function Insights() {
       {/* Sales Forecast */}
       <Card
         title={
-          <div className="flex items-center gap-2.5 mb-1 mt-[-4px]">
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex items-center justify-center">
               <TrendingUp size={16} className="text-[#3B5BDB]" />
             </div>
-            <span>Sales Forecast</span>
+            <div>
+              <span>Sales Forecast</span>
+              <p className="text-xs text-gray-400 font-normal mt-0.5">Based on recent sales history — estimates only</p>
+            </div>
           </div>
         }
       >
-        <p className="text-xs text-gray-400 mb-5 ml-10 mt-[-20px]">Based on recent sales history — estimates only</p>
 
         <div className="grid sm:grid-cols-2 gap-4">
           {[
