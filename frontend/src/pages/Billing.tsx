@@ -36,6 +36,7 @@ export default function Billing() {
   const [showRecent, setShowRecent] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     productApi.getAll().then(res => setCatalog(res.data)).catch(() => {});
@@ -75,19 +76,28 @@ export default function Billing() {
 
   const removeItem = (id: number) => setCart((prev) => prev.filter((c) => c.id !== id));
 
-  const startVoiceBilling = () => {
+  const toggleVoiceBilling = () => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Your browser does not support Voice Input.");
       return;
     }
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.lang = 'en-IN';
     recognition.interimResults = false;
     
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onresult = async (event: any) => {
+      recognition.stop();
+      setIsListening(false);
       const transcript = event.results[0][0].transcript;
       setSearch(transcript);
       
@@ -402,7 +412,7 @@ export default function Billing() {
               />
             </div>
             <button 
-              onClick={isListening ? undefined : startVoiceBilling}
+              onClick={isListening ? undefined : toggleVoiceBilling}
               className={`px-4 h-11 flex-shrink-0 rounded-xl flex items-center gap-2 transition-all font-semibold shadow-sm ${
                 isListening 
                   ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/40 ring-2 ring-red-500/50' 
@@ -675,12 +685,12 @@ export default function Billing() {
 
           <div>
             <p className="text-xs font-semibold text-gray-400 mb-2">Payment Method</p>
-            <div className="grid grid-cols-4 gap-2">
-              {(["cash", "upi", "card", "credit"] as const).map((m) => (
+            <div className="flex flex-wrap gap-2">
+              {(["cash", "upi", "phonepe", "gpay", "paytm", "card", "credit"] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setPayment(m)}
-                  className={`flex-1 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wide border transition-all ${
+                  className={`flex-1 min-w-[70px] py-2 rounded-xl text-[11px] font-bold uppercase tracking-wide border transition-all ${
                     payment === m
                       ? m === "credit"
                         ? "bg-amber-500 text-white border-amber-500"
@@ -688,13 +698,13 @@ export default function Billing() {
                       : "border-[#E4E7EC] text-gray-500 hover:border-[#3B5BDB]/40"
                   }`}
                 >
-                  {m === "upi" ? "UPI" : m === "credit" ? "Credit" : m}
+                  {m === "phonepe" ? "PhonePe" : m === "gpay" ? "GPay" : m === "paytm" ? "Paytm" : m === "upi" ? "UPI" : m === "credit" ? "Credit" : m}
                 </button>
               ))}
             </div>
           </div>
 
-          {payment === "upi" && total > 0 && (
+          {["upi", "phonepe", "gpay", "paytm"].includes(payment) && total > 0 && (
             (!shopUpiId || shopUpiId === "shopowner@upi" || shopUpiId === "") ? (
               <div className="mt-2 p-3 border border-[#E4E7EC] rounded-xl flex flex-col bg-[#F9FAFB] fade-in">
                 <div className="text-sm font-semibold text-[#1E2A3B] mb-1">Set Up UPI Payment</div>

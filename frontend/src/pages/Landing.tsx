@@ -111,7 +111,7 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
       </nav>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-20 pb-16">
+      <section className="max-w-6xl mx-auto px-6 pt-20 pb-16 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
             <div className="inline-flex items-center gap-2 bg-[#EEF2FF] text-[#3B5BDB] text-sm font-semibold px-3 py-1.5 rounded-full mb-6 whitespace-pre-line">
@@ -141,9 +141,9 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
           </div>
 
           {/* Dashboard preview illustration */}
-          <div className="relative">
+          <div className="relative hover:-translate-y-2 hover:shadow-2xl transition-all duration-500 rounded-2xl">
             <div className="bg-[#F7F8FA] rounded-2xl p-4 border border-[#E4E7EC] shadow-lg">
-              <div className="bg-white rounded-xl p-4 border border-[#E4E7EC] mb-3">
+              <div className="bg-white rounded-xl p-4 border border-[#E4E7EC] mb-3 hover:shadow-md transition-shadow">
                 <div className="text-xs text-gray-400 font-medium mb-1">{tr("Today's Sales", "ఈరోజు అమ్మకాలు")}</div>
                 <div className="font-display font-extrabold text-2xl text-[#1E2A3B]">₹24,850</div>
                 <div className="text-xs text-green-600 font-semibold mt-1">{tr("↑ 18.4% from yesterday", "↑ నిన్నటి కంటే 18.4%")}</div>
@@ -172,7 +172,7 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-4 -right-4 bg-white border border-[#E4E7EC] rounded-xl px-4 py-3 shadow-md">
+            <div className="absolute -bottom-4 -right-4 bg-white border border-[#E4E7EC] rounded-xl px-4 py-3 shadow-lg animate-bounce hover:scale-110 transition-transform cursor-pointer" style={{ animationDuration: '3s' }}>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#DCFCE7] rounded-lg flex items-center justify-center">
                   <CheckCircle size={16} className="text-green-600" />

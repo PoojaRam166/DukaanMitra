@@ -8,18 +8,18 @@ const getSalesData = async (req, res, next) => {
     // Build an inclusive lower bound and an exclusive upper bound so each
     // filter only ever covers the days it names (e.g. "Yesterday" must not
     // also pull in today's bills).
-    let lowerBound = "NOW() - INTERVAL '7 days'";
-    let upperBound = "NOW() + INTERVAL '1 second'"; // effectively "no upper limit"
+    let lowerBound = "(NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days'";
+    let upperBound = "(NOW() AT TIME ZONE 'Asia/Kolkata') + INTERVAL '1 second'"; // effectively "no upper limit"
     if (filter === 'Today') {
-      lowerBound = "CURRENT_DATE";
+      lowerBound = "DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')";
     } else if (filter === 'Yesterday') {
-      lowerBound = "CURRENT_DATE - INTERVAL '1 day'";
-      upperBound = "CURRENT_DATE";
+      lowerBound = "DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day')";
+      upperBound = "DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')";
     } else if (filter === '30 Days') {
-      lowerBound = "NOW() - INTERVAL '30 days'";
+      lowerBound = "(NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '30 days'";
     }
-    const dateRangeClause = `>= ${lowerBound} AND created_at < ${upperBound}`;
-    const dateRangeClauseB = `>= ${lowerBound} AND b.created_at < ${upperBound}`;
+    const dateRangeClause = `>= ${lowerBound} AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < ${upperBound}`;
+    const dateRangeClauseB = `>= ${lowerBound} AND (b.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < ${upperBound}`;
 
     const [summary, trends, daily, bestProducts, payments] = await Promise.all([
       // Summary
@@ -31,7 +31,7 @@ const getSalesData = async (req, res, next) => {
           COALESCE(SUM(bi.quantity), 0) AS items_sold
         FROM bills b
         LEFT JOIN bill_items bi ON bi.bill_id = b.id
-        WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
+        WHERE (b.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClauseB} AND b.user_id = $1
       `, [req.user.id]),
       // Trends (Group by date)
       db.query(`
@@ -39,9 +39,9 @@ const getSalesData = async (req, res, next) => {
           TO_CHAR(DATE_TRUNC('day', created_at), 'Mon DD') AS date,
           COALESCE(SUM(total), 0) AS sales
         FROM bills
-        WHERE created_at ${dateRangeClause} AND user_id = $1
-        GROUP BY DATE_TRUNC('day', created_at)
-        ORDER BY DATE_TRUNC('day', created_at) ASC
+        WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClause} AND user_id = $1
+        GROUP BY DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')
+        ORDER BY DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ASC
       `, [req.user.id]),
       // Daily Sales Table
       db.query(`
@@ -53,9 +53,9 @@ const getSalesData = async (req, res, next) => {
           COALESCE(SUM(bi.quantity), 0) AS items
         FROM bills b
         LEFT JOIN bill_items bi ON bi.bill_id = b.id
-        WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
-        GROUP BY DATE_TRUNC('day', b.created_at)
-        ORDER BY DATE_TRUNC('day', b.created_at) DESC
+        WHERE (b.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClauseB} AND b.user_id = $1
+        GROUP BY DATE_TRUNC('day', b.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')
+        ORDER BY DATE_TRUNC('day', b.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') DESC
       `, [req.user.id]),
       // Best Selling Products
       db.query(`
@@ -66,7 +66,7 @@ const getSalesData = async (req, res, next) => {
         FROM bill_items bi 
         JOIN products p ON p.id = bi.product_id
         JOIN bills b ON b.id = bi.bill_id
-        WHERE b.created_at ${dateRangeClauseB} AND b.user_id = $1
+        WHERE (b.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClauseB} AND b.user_id = $1
         GROUP BY p.id, p.name 
         ORDER BY revenue DESC 
         LIMIT 5
@@ -77,7 +77,7 @@ const getSalesData = async (req, res, next) => {
           payment_method AS name, 
           COUNT(*) AS count
         FROM bills
-        WHERE created_at ${dateRangeClause} AND user_id = $1
+        WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClause} AND user_id = $1
         GROUP BY payment_method
       `, [req.user.id])
     ]);
@@ -88,7 +88,10 @@ const getSalesData = async (req, res, next) => {
     // the Billing page, so match case-insensitively — comparing against the
     // Title-cased strings here previously never matched, silently painting
     // every method with the same fallback color.
-    const PAYMENT_COLORS = { upi: '#3B5BDB', cash: '#16A34A', card: '#D97706', credit: '#DC2626' };
+    const PAYMENT_COLORS = { 
+      upi: '#3B5BDB', cash: '#16A34A', card: '#D97706', credit: '#DC2626',
+      phonepe: '#5E227F', gpay: '#1A73E8', paytm: '#002970' 
+    };
     const paymentData = payments.rows.map(p => ({
       name: p.name,
       value: totalPayments ? Math.round((parseInt(p.count) / totalPayments) * 100) : 0,

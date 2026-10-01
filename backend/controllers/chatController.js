@@ -2,119 +2,243 @@ const Groq = require("groq-sdk");
 const db = require('../config/db');
 
 exports.sendMessage = async (req, res, next) => {
-  let stats = { total_sales: 0, low_stock_items: 0, total_products: 0, total_customers: 0 };
-  let customerNames = '';
-  let productNames = '';
-  
   try {
     const { message, language } = req.body;
     
     if (!process.env.GROQ_API_KEY) {
-      return res.json({ success: true, data: "⚠️ Groq API key missing." });
+      // Just a check to log if we want, but we don't return here anymore, 
+      // we let it fall through to the fallback at the bottom.
     }
 
     const statsRes = await db.query(`
+      WITH user_bills AS (
+        SELECT * FROM bills WHERE user_id = $1
+      ),
+      user_expenses AS (
+        SELECT * FROM expenses WHERE user_id = $1
+      )
       SELECT 
-        (SELECT COALESCE(SUM(total), 0) FROM bills WHERE user_id = $1) AS total_sales,
-        (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills) AS total_sales,
+        (SELECT COUNT(*) FROM user_bills) AS total_bills,
+        
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_today,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day') AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_yesterday,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days') AS sales_week,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('month', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_month,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('year', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_year,
+
+        (SELECT COALESCE(SUM(amount), 0) FROM user_expenses WHERE date >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')::DATE) AS exp_today,
+        (SELECT COALESCE(SUM(amount), 0) FROM user_expenses WHERE date = (DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day'))::DATE) AS exp_yesterday,
+        (SELECT COALESCE(SUM(amount), 0) FROM user_expenses WHERE date >= ((NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days')::DATE) AS exp_week,
+        
         (SELECT COUNT(*) FROM products WHERE user_id = $1) AS total_products,
-        (SELECT COUNT(*) FROM customers WHERE user_id = $1) AS total_customers
+        (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items,
+        (SELECT COUNT(*) FROM customers WHERE user_id = $1) AS total_customers,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE payment_method = 'credit') AS total_credit,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE payment_method = 'cash') AS total_cash,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE payment_method IN ('upi', 'phonepe', 'gpay', 'paytm')) AS total_upi,
+        (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE payment_method = 'card') AS total_card
     `, [req.user.id]);
-    stats = statsRes.rows[0] || stats;
+    
+    let stats = statsRes.rows[0] || {};
 
-    const customersRes = await db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 10', [req.user.id]);
-    customerNames = customersRes.rows.map(r => r.name).join(', ');
+    const [customersRes, productsRes, creditNamesRes, lowStockRes] = await Promise.all([
+      db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 10', [req.user.id]),
+      db.query('SELECT name FROM products WHERE user_id = $1 LIMIT 10', [req.user.id]),
+      db.query(`SELECT DISTINCT c.name FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' LIMIT 10`, [req.user.id]),
+      db.query(`SELECT name FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 10`, [req.user.id])
+    ]);
 
-    const productsRes = await db.query('SELECT name FROM products WHERE user_id = $1 LIMIT 10', [req.user.id]);
-    productNames = productsRes.rows.map(r => r.name).join(', ');
-
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const customerNames = customersRes.rows.map(r => r.name).join(', ');
+    const productNames = productsRes.rows.map(r => r.name).join(', ');
+    const creditNames = creditNamesRes.rows.map(r => r.name).join(', ');
+    const lowStockNames = lowStockRes.rows.map(r => r.name).join(', ');
 
     let prompt = `
-      You are DukaanMitra AI, a highly intelligent virtual assistant for a kirana store owner in India. 
-      You are connected to their actual live database.
-      Store Context: The store's all-time sales are ₹${stats.total_sales}, and they currently have ${stats.low_stock_items} items running low on stock.
+      You are DukaanMitra AI, an incredibly smart, respectful, and helpful virtual assistant for an Indian Kirana (grocery) store owner.
+      You are directly connected to their live PostgreSQL database.
       
-      The store owner asks: "${message}"
+      Live Store Context:
+      - Total All-Time Sales: ₹${stats.total_sales} (from ${stats.total_bills} bills)
+      - Sales: Today: ₹${stats.sales_today} | Yesterday: ₹${stats.sales_yesterday} | Week: ₹${stats.sales_week} | Month: ₹${stats.sales_month} | Year: ₹${stats.sales_year}
+      - Expenses: Today: ₹${stats.exp_today} | Yesterday: ₹${stats.exp_yesterday} | Week: ₹${stats.exp_week}
+      - Payments: Cash: ₹${stats.total_cash} | UPI: ₹${stats.total_upi} | Card: ₹${stats.total_card}
+      - Total Pending Udhaar/Credit: ₹${stats.total_credit}
+      - Customers Owe Credit: ${creditNames || 'None'}
+      - Items Running Out of Stock: ${stats.low_stock_items} items (${lowStockNames || 'None'})
+      - Total Distinct Products: ${stats.total_products}
+      - Total Registered Customers: ${stats.total_customers}
+      - Some Registered Customers: ${customerNames || 'None yet'}
+      - Some Inventory Products: ${productNames || 'None yet'}
       
-      Provide a brief, professional, and helpful response. Keep it concise (under 3 sentences). If they ask about sales or stock, use the context provided.
+      The store owner just asked you: "${message}"
+      
+      Rules for your response:
+      1. Be highly conversational, warm, and extremely respectful (like a trusted employee or friend).
+      2. Keep it concise (under 3 short sentences). No long paragraphs.
+      3. If they ask about sales, profit, stock, udhaar, products, or customers, use the EXACT numbers from the Live Store Context above.
+      4. Never mention the "PostgreSQL database" or "Live Store Context" directly. Just speak naturally.
     `;
 
     if (language === 'te') {
-      prompt += `\nCRITICAL INSTRUCTION: You MUST reply entirely in the Telugu language (తెలుగు). Do not use English.`;
+      prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply entirely in the Telugu script (తెలుగు). Be extremely respectful. Use proper Telugu grammar.`;
     } else if (language === 'bi') {
-      prompt += `\nCRITICAL INSTRUCTION: You MUST reply in a natural mix of Telugu and English (Bilingual/Tanglish style). Use Telugu script but mix in English words commonly used by Indians (like "stock", "sales", "products").`;
+      prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply in a highly natural "Tanglish" mix (Telugu script + English words). 
+      - Use Telugu script for grammar and structure, but write business words in English.
+      - Example: "మీ store sales ఈరోజు చాలా బాగున్నాయి! మీకు ${stats.low_stock_items} products కి low stock ఉంది. వాటిని వెంటనే restock చేసుకోండి."
+      - Do NOT use 100% pure Telugu. Real Indian shop owners mix English business words (sales, stock, customers, profit, products) into their Telugu sentences.`;
+    } else {
+      prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply in fluent English. Be highly respectful.`;
     }
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.1-8b-instant',
-    });
+    if (process.env.GROQ_API_KEY) {
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'llama-3.1-8b-instant',
+      });
+      const text = chatCompletion.choices[0]?.message?.content || "";
+      return res.json({ success: true, data: text });
+    } else {
+      throw new Error("No API Key");
+    }
 
-    const text = chatCompletion.choices[0]?.message?.content || "";
-
-    res.json({ success: true, data: text });
   } catch (error) {
-    console.error("Groq API Error:", error.message);
-    
-    // Fallback response for invalid API keys so the UI doesn't break for the user
-    // Fallback Mock AI Engine (Executes when API key is invalid/missing)
+    console.error("Chat API Error:", error.message);
     const { language, message: userMsg } = req.body;
     const msgLower = (userMsg || '').toLowerCase();
     
-    let enResponse = `Based on your store data, your total all-time sales are ₹${stats.total_sales || 0}. Keep up the great work!`;
-    let teResponse = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${stats.total_sales || 0}. ఇలాగే మంచి పనిని కొనసాగించండి!`;
-    let biResponse = `మీ store data ప్రకారం, మీ total sales ₹${stats.total_sales || 0}. Keep it up!`;
+    // Fallback if stats were not fetched properly
+    // (If the error was Groq, we actually lost access to the block scoped `stats` variables here.
+    // Ideally they should be declared outside `try`, but for now we'll just query them again or use 0s if DB fails)
+    let fbStats = { total_sales: 0, sales_today: 0, sales_yesterday: 0, sales_week: 0, sales_month: 0, sales_year: 0, exp_today: 0, exp_yesterday: 0, exp_week: 0, low_stock_items: 0, total_products: 0, total_customers: 0, total_credit: 0, total_bills: 0 };
+    let pNames = '', cNames = '', lsNames = '';
+    
+    try {
+      const statsRes = await db.query(`
+        WITH b AS (SELECT * FROM bills WHERE user_id = $1), e AS (SELECT * FROM expenses WHERE user_id = $1)
+        SELECT 
+          (SELECT COALESCE(SUM(total), 0) FROM b) AS total_sales,
+          (SELECT COUNT(*) FROM b) AS total_bills,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_today,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day') AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_yesterday,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days') AS sales_week,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('month', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_month,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('year', NOW() AT TIME ZONE 'Asia/Kolkata')) AS sales_year,
+          (SELECT COALESCE(SUM(amount), 0) FROM e WHERE date >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata')::DATE) AS exp_today,
+          (SELECT COALESCE(SUM(amount), 0) FROM e WHERE date = (DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day'))::DATE) AS exp_yesterday,
+          (SELECT COALESCE(SUM(amount), 0) FROM e WHERE date >= ((NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days')::DATE) AS exp_week,
+          (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'credit') AS total_credit,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'cash') AS total_cash,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method IN ('upi', 'phonepe', 'gpay', 'paytm')) AS total_upi,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'card') AS total_card
+      `, [req.user.id]);
+      fbStats = statsRes.rows[0];
+      
+      const [cRes, pRes, lRes] = await Promise.all([
+        db.query(`SELECT DISTINCT c.name FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' LIMIT 10`, [req.user.id]),
+        db.query(`SELECT name FROM products WHERE user_id = $1 LIMIT 10`, [req.user.id]),
+        db.query(`SELECT name FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 10`, [req.user.id])
+      ]);
+      cNames = cRes.rows.map(r => r.name).join(', ');
+      pNames = pRes.rows.map(r => r.name).join(', ');
+      lsNames = lRes.rows.map(r => r.name).join(', ');
+    } catch(e) {}
 
-    // Keyword matching for intelligent mock responses
-    if (msgLower.includes('hi') || msgLower.includes('hello') || msgLower.includes('hey') || msgLower.includes('నమస్తే') || msgLower.includes('హలో')) {
+    let enResponse = `Based on your store data, your total all-time sales are ₹${fbStats.total_sales}. Keep up the great work!`;
+    let teResponse = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${fbStats.total_sales}. ఇలాగే మంచి పనిని కొనసాగించండి!`;
+    let biResponse = `మీ store data ప్రకారం, మీ total sales ₹${fbStats.total_sales}. Keep it up!`;
+
+    // 1. Udhaar / Credit logic
+    if (msgLower.includes('udhar') || msgLower.includes('udhaar') || msgLower.includes('credit') || msgLower.includes('pending') || msgLower.includes('అప్పు') || msgLower.includes('బాకీ') || msgLower.includes('katha')) {
+      enResponse = `You have a total of ₹${fbStats.total_credit} in pending credit/udhaar. ${cNames ? `Customers who owe you include: ${cNames}.` : 'No customers currently owe you.'}`;
+      teResponse = `మీకు మొత్తం ₹${fbStats.total_credit} అప్పు/బాకీ పెండింగ్‌లో ఉంది. ${cNames ? `మీకు అప్పు ఉన్న కస్టమర్లు: ${cNames}.` : 'ప్రస్తుతం మీకు ఎవరూ అప్పు లేరు.'}`;
+      biResponse = `మీకు total ₹${fbStats.total_credit} credit/udhaar pending లో ఉంది. ${cNames ? `మీకు pending ఉన్న customers: ${cNames}.` : 'ప్రస్తుతం customers ఎవరూ credit లో లేరు.'}`;
+    
+    // 2. Expenses Logic
+    } else if (msgLower.includes('expense') || msgLower.includes('karchu') || msgLower.includes('ఖర్చు')) {
+      if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju')) {
+        enResponse = `Your expenses for today are ₹${fbStats.exp_today}.`;
+        teResponse = `ఈరోజు మీ ఖర్చులు ₹${fbStats.exp_today}.`;
+        biResponse = `ఈరోజు మీ expenses ₹${fbStats.exp_today}.`;
+      } else if (msgLower.includes('yesterday') || msgLower.includes('నిన్న') || msgLower.includes('ninna')) {
+        enResponse = `Your expenses for yesterday were ₹${fbStats.exp_yesterday}.`;
+        teResponse = `నిన్నటి మీ ఖర్చులు ₹${fbStats.exp_yesterday}.`;
+        biResponse = `నిన్న మీ expenses ₹${fbStats.exp_yesterday}.`;
+      } else if (msgLower.includes('week') || msgLower.includes('వారం') || msgLower.includes('varam')) {
+        enResponse = `Your expenses for the past 7 days are ₹${fbStats.exp_week}.`;
+        teResponse = `గత 7 రోజుల మీ ఖర్చులు ₹${fbStats.exp_week}.`;
+        biResponse = `గత 7 రోజుల్లో మీ weekly expenses ₹${fbStats.exp_week}.`;
+      } else {
+        enResponse = `Your expenses today are ₹${fbStats.exp_today} and ₹${fbStats.exp_week} this week.`;
+        teResponse = `ఈరోజు మీ ఖర్చులు ₹${fbStats.exp_today} మరియు ఈ వారం ₹${fbStats.exp_week}.`;
+        biResponse = `ఈరోజు మీ expenses ₹${fbStats.exp_today} మరియు ఈ week ₹${fbStats.exp_week}.`;
+      }
+
+    // 3. Sales Logic (Date ranges)
+    } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('అమ్మకాలు') || msgLower.includes('ammalu') || msgLower.includes('ammakam')) {
+      if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju')) {
+        enResponse = `Your sales for today are ₹${fbStats.sales_today}. Great job!`;
+        teResponse = `ఈరోజు మీ అమ్మకాలు ₹${fbStats.sales_today}. చాలా బాగుంది!`;
+        biResponse = `ఈరోజు మీ sales ₹${fbStats.sales_today}. సూపర్!`;
+      } else if (msgLower.includes('yesterday') || msgLower.includes('నిన్న') || msgLower.includes('ninna')) {
+        enResponse = `Your sales for yesterday were ₹${fbStats.sales_yesterday}.`;
+        teResponse = `నిన్నటి మీ అమ్మకాలు ₹${fbStats.sales_yesterday}.`;
+        biResponse = `నిన్న మీ sales ₹${fbStats.sales_yesterday}.`;
+      } else if (msgLower.includes('week') || msgLower.includes('వారం') || msgLower.includes('varam')) {
+        enResponse = `Your sales for the past 7 days are ₹${fbStats.sales_week}.`;
+        teResponse = `గత 7 రోజుల మీ అమ్మకాలు ₹${fbStats.sales_week}.`;
+        biResponse = `గత 7 రోజుల్లో మీ weekly sales ₹${fbStats.sales_week}.`;
+      } else if (msgLower.includes('month') || msgLower.includes('నెల') || msgLower.includes('nela')) {
+        enResponse = `Your sales for this month are ₹${fbStats.sales_month}.`;
+        teResponse = `ఈ నెల మీ అమ్మకాలు ₹${fbStats.sales_month}.`;
+        biResponse = `ఈ నెల మీ sales ₹${fbStats.sales_month}.`;
+      } else if (msgLower.includes('year') || msgLower.includes('సంవత్సరం') || msgLower.includes('samvatsaram')) {
+        enResponse = `Your sales for this year are ₹${fbStats.sales_year}.`;
+        teResponse = `ఈ సంవత్సరం మీ అమ్మకాలు ₹${fbStats.sales_year}.`;
+        biResponse = `ఈ year మీ sales ₹${fbStats.sales_year}.`;
+      } else {
+        enResponse = `Your all-time total sales are ₹${fbStats.total_sales} from ${fbStats.total_bills} bills. Keep it up!`;
+        teResponse = `మీ మొత్తం విక్రయాలు ₹${fbStats.total_sales} (${fbStats.total_bills} బిల్లుల నుండి). ఇలాగే కొనసాగించండి!`;
+        biResponse = `మీ total sales ₹${fbStats.total_sales} (${fbStats.total_bills} bills నుండి). Keep it up!`;
+      }
+
+    // 4. Products / Low Stock Name Listing
+    } else if ((msgLower.includes('name') || msgLower.includes('what') || msgLower.includes('ఏమిటి') || msgLower.includes('పేరు')) && (msgLower.includes('stock') || msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు'))) {
+      if (msgLower.includes('low') || msgLower.includes('empty') || msgLower.includes('తక్కువ') || msgLower.includes('takkuva')) {
+        enResponse = `You have ${fbStats.low_stock_items} items low on stock. They are: ${lsNames || 'None'}.`;
+        teResponse = `మీకు ${fbStats.low_stock_items} వస్తువుల స్టాక్ తక్కువగా ఉంది. అవి: ${lsNames || 'ఏమీ లేవు'}.`;
+        biResponse = `మీకు ${fbStats.low_stock_items} items low stock లో ఉన్నాయి. అవి: ${lsNames || 'ఏమీ లేవు'}.`;
+      } else {
+        enResponse = `Here are some products in your inventory: ${pNames || 'None'}.`;
+        teResponse = `మీ ఇన్వెంటరీలోని కొన్ని ఉత్పత్తులు: ${pNames || 'ఏమీ లేవు'}.`;
+        biResponse = `మీ inventory లోని కొన్ని products: ${pNames || 'ఏమీ లేవు'}.`;
+      }
+
+    // 5. Generic Low Stock Alert
+    } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha')) {
+      enResponse = `You currently have ${fbStats.low_stock_items} items running low on stock. Please restock them!`;
+      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${fbStats.low_stock_items} వస్తువుల స్టాక్ తక్కువగా ఉంది. వాటిని రీస్టాక్ చేయండి!`;
+      biResponse = `ప్రస్తుతం మీ store లో ${fbStats.low_stock_items} items కు low stock ఉంది. వాటిని restock చేయండి!`;
+
+    // 5b. Payment Types
+    } else if (msgLower.includes('payment') || msgLower.includes('cash') || msgLower.includes('upi') || msgLower.includes('card') || msgLower.includes('చెల్లింపు') || msgLower.includes('డబ్బు')) {
+      enResponse = `Your payment breakdown is: Cash ₹${fbStats.total_cash}, UPI ₹${fbStats.total_upi}, Card ₹${fbStats.total_card}.`;
+      teResponse = `మీ చెల్లింపుల వివరాలు: నగదు ₹${fbStats.total_cash}, UPI ₹${fbStats.total_upi}, కార్డ్ ₹${fbStats.total_card}.`;
+      biResponse = `మీ payment వివరాలు: Cash ₹${fbStats.total_cash}, UPI ₹${fbStats.total_upi}, Card ₹${fbStats.total_card}.`;
+
+    // 6. Bills
+    } else if (msgLower.includes('bills') || msgLower.includes('బిల్లులు')) {
+      enResponse = `You have generated a total of ${fbStats.total_bills} bills all-time!`;
+      teResponse = `మీరు మొత్తంగా ${fbStats.total_bills} బిల్లులను సృష్టించారు!`;
+      biResponse = `మీరు total గా ${fbStats.total_bills} bills generate చేసారు!`;
+
+    // 7. Greeting Fallback
+    } else if (msgLower.match(/\b(hi|hello|hey|నమస్తే|హలో|namaste|namasthe|namaskaram)\b/)) {
       enResponse = "Hello! How can I help you manage your Kirana store today?";
       teResponse = "నమస్తే! ఈరోజు మీ కిరాణా స్టోర్‌ను నిర్వహించడంలో నేను మీకు ఎలా సహాయపడగలను?";
       biResponse = "హలో! ఈరోజు మీ kirana store manage చేయడానికి నేను ఎలా help చేయగలను?";
-    } else if ((msgLower.includes('name') || msgLower.includes('what are') || msgLower.includes('ఏమిటి') || msgLower.includes('పేరు')) && (msgLower.includes('stock') || msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు'))) {
-      if (productNames) {
-        enResponse = `Here are some of the products currently in your inventory: ${productNames}.`;
-        teResponse = `ప్రస్తుతం మీ ఇన్వెంటరీలో ఉన్న కొన్ని ఉత్పత్తులు ఇవిగో: ${productNames}.`;
-        biResponse = `ప్రస్తుతం మీ inventory లో ఉన్న కొన్ని products ఇవిగో: ${productNames}.`;
-      } else {
-        enResponse = `You don't have any products in your inventory yet.`;
-        teResponse = `మీ ఇన్వెంటరీలో ఇంకా ఎటువంటి ఉత్పత్తులు లేవు.`;
-        biResponse = `మీ inventory లో ఇంకా products ఏమీ లేవు.`;
-      }
-    } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha')) {
-      enResponse = `You currently have ${stats.low_stock_items || 0} items running dangerously low on stock. Please check the inventory page to restock them!`;
-      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${stats.low_stock_items || 0} వస్తువుల స్టాక్ ప్రమాదకరంగా తక్కువగా ఉంది. దయచేసి వాటిని రీస్టాక్ చేయడానికి ఇన్వెంటరీ పేజీని తనిఖీ చేయండి!`;
-      biResponse = `ప్రస్తుతం మీ store లో ${stats.low_stock_items || 0} items కు low stock ఉంది. వాటిని restock చేయడానికి inventory పేజీని చెక్ చేయండి!`;
-    } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('bill') || msgLower.includes('అమ్మకాలు') || msgLower.includes('లాభం') || msgLower.includes('బిల్లు')) {
-      enResponse = `Your store is doing fantastic! Your all-time total sales are ₹${stats.total_sales || 0}. Keep it up!`;
-      teResponse = `మీ స్టోర్ చాలా అద్భుతంగా నడుస్తోంది! మీ మొత్తం విక్రయాలు ₹${stats.total_sales || 0}. ఇలాగే కొనసాగించండి!`;
-      biResponse = `మీ store చాలా బాగా నడుస్తోంది! మీ total sales ₹${stats.total_sales || 0}. సూపర్!`;
-    } else if (msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు')) {
-      enResponse = `You currently have a total of ${stats.total_products || 0} distinct products registered in your shop's inventory.`;
-      teResponse = `ప్రస్తుతం మీ దుకాణం ఇన్వెంటరీలో మొత్తం ${stats.total_products || 0} విభిన్న ఉత్పత్తులు నమోదు చేయబడ్డాయి.`;
-      biResponse = `ప్రస్తుతం మీ shop inventory లో మొత్తం ${stats.total_products || 0} products register చేయబడ్డాయి.`;
-    } else if ((msgLower.includes('name') || msgLower.includes('పేరు')) && (msgLower.includes('customer') || msgLower.includes('client') || msgLower.includes('కస్టమర్'))) {
-      if (customerNames) {
-        enResponse = `Here are some of your registered customers: ${customerNames}.`;
-        teResponse = `మీ నమోదిత కస్టమర్ల పేర్లు: ${customerNames}.`;
-        biResponse = `మీకు register అయిన కొందరు customers: ${customerNames}.`;
-      } else {
-        enResponse = `You don't have any customers registered yet.`;
-        teResponse = `మీకు ఇంకా ఏ కస్టమర్లు నమోదు కాలేదు.`;
-        biResponse = `మీకు ఇంకా customers ఎవరూ register అవ్వలేదు.`;
-      }
-    } else if (msgLower.includes('customer') || msgLower.includes('client') || msgLower.includes('కస్టమర్లు') || msgLower.includes('ఖాతాదారులు')) {
-      enResponse = `You have built a great loyal base of ${stats.total_customers || 0} registered customers!`;
-      teResponse = `మీరు ${stats.total_customers || 0} మంది నమోదిత కస్టమర్లతో గొప్ప పునాదిని నిర్మించుకున్నారు!`;
-      biResponse = `మీకు ${stats.total_customers || 0} మంది loyal customers ఉన్నారు. గ్రేట్!`;
-    } else if (msgLower.includes('who are you') || msgLower.includes('your name') || msgLower.includes('నీవు ఎవరు') || msgLower.includes('నీ పేరు')) {
-      enResponse = "I am DukaanMitra AI, your personal Smart Business Assistant built specifically for Kirana store owners!";
-      teResponse = "నేను మీ దుకాణమిత్ర AI ని, కిరాణా స్టోర్ యజమానుల కోసం ప్రత్యేకంగా రూపొందించబడిన మీ వ్యక్తిగత స్మార్ట్ బిజినెస్ అసిస్టెంట్!";
-      biResponse = "నేను DukaanMitra AI ని, Kirana store ఓనర్ల కోసం తయారుచేసిన మీ Smart Business Assistant!";
-    } else if (msgLower.includes('help') || msgLower.includes('support') || msgLower.includes('సహాయం') || msgLower.includes('సపోర్ట్')) {
-      enResponse = "I can help you analyze your total sales, track your low-stock inventory, or provide insights into your products and customers. Just ask!";
-      teResponse = "నేను మీ మొత్తం విక్రయాలను విశ్లేషించడంలో, మీ తక్కువ-స్టాక్ ఇన్వెంటరీని ట్రాక్ చేయడంలో లేదా మీ ఉత్పత్తులు మరియు కస్టమర్‌ల గురించి సమాచారం అందించడంలో సహాయపడగలను. అడగండి!";
-      biResponse = "నేను మీ total sales analyze చేయడానికి, low-stock inventory ని track చేయడానికి help చేయగలను. అడగండి!";
     }
 
     const finalResponse = language === 'te' ? teResponse : language === 'bi' ? biResponse : enResponse;
@@ -182,6 +306,51 @@ exports.parseBilling = async (req, res, next) => {
     // If Groq API fails for any reason (e.g. rate limit, network), fallback gracefully
     if (req.body.transcript) {
       return res.json({ success: true, data: fallbackParse(req.body.transcript) });
+    }
+    res.status(500).json({ success: false, message: 'Failed to parse voice command' });
+  }
+};
+
+const fallbackParseExpense = (transcript) => {
+  const numMatch = transcript.match(/\b(\d+)\b/);
+  const amount = numMatch ? parseInt(numMatch[1]) : 0;
+  return { amount, category: "Miscellaneous", description: transcript };
+};
+
+exports.parseExpenseVoice = async (req, res, next) => {
+  try {
+    const { transcript } = req.body;
+    if (!process.env.GROQ_API_KEY) {
+      return res.json({ success: true, data: fallbackParseExpense(transcript) });
+    }
+
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const prompt = `
+      You are an expert AI parser for a shop owner's expense tracker.
+      The user speaks a voice command to log an expense. It may be in English, Telugu, or Tanglish.
+      Extract the "amount", "category", and "description".
+      Categories must be one of: "Inventory", "Salary", "Rent", "Utilities", "Marketing", "Maintenance", "Transport", "Other".
+      Output ONLY a valid JSON object with keys "amount" (number), "category" (string), and "description" (string).
+      Command: "${transcript}"
+    `;
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.1-8b-instant',
+      temperature: 0.1,
+      response_format: { type: "json_object" }
+    });
+
+    const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
+    if (!result.amount || !result.category) {
+      return res.json({ success: true, data: fallbackParseExpense(transcript) });
+    }
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Parse Expense API Error:", error.message);
+    if (req.body.transcript) {
+      return res.json({ success: true, data: fallbackParseExpense(req.body.transcript) });
     }
     res.status(500).json({ success: false, message: 'Failed to parse voice command' });
   }

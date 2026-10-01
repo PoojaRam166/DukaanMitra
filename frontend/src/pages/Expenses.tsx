@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { Plus, Trash2, Edit2, TrendingDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, Edit2, TrendingDown, Mic } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatCard } from "../components/ui/StatCard";
 import { Card } from "../components/ui/Card";
 import { Table } from "../components/ui/Table";
 import { Modal } from "../components/ui/Modal";
 import { FormInput } from "../components/ui/FormInput";
-import { expenseApi } from "../services/api";
+import { expenseApi, chatApi } from "../services/api";
 import { useSettings } from "../context/SettingsContext";
 
 const categories = ["Rent", "Electricity", "Staff Salary", "Packaging", "Transport", "Repairs", "Marketing", "Miscellaneous"];
@@ -30,6 +30,53 @@ export default function Expenses() {
   const [editItem, setEditItem] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ category: "Rent", amount: "", desc: "", date: getLocalDateStr() });
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleVoiceExpense = () => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Voice Input.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = async (event: any) => {
+      recognition.stop();
+      setIsListening(false);
+      const transcript = event.results[0][0].transcript;
+      try {
+        setLoading(true);
+        const res = await chatApi.parseExpense(transcript);
+        if (res.data) {
+           setForm({
+              category: res.data.category || "Miscellaneous",
+              amount: res.data.amount.toString(),
+              desc: res.data.description || transcript,
+              date: getLocalDateStr()
+           });
+           setEditItem(null);
+           setShowAdd(true);
+        }
+      } catch (e) {
+        alert("Could not parse expense from voice.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    recognition.start();
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -94,9 +141,17 @@ export default function Expenses() {
   return (
     <div className="p-6 pb-24 md:pb-6 max-w-screen-xl mx-auto fade-in">
       <PageHeader title={t("expenses")} subtitle={t("expensesSubtitle")}>
-        <button className="btn-primary" onClick={() => { setForm({ category: "Rent", amount: "", desc: "", date: getLocalDateStr() }); setEditItem(null); setShowAdd(true); }}>
-          <Plus size={15} /> Add Expense
-        </button>
+        <div className="flex gap-2">
+          <button 
+            className={`btn-secondary ${isListening ? 'animate-pulse text-red-500 border-red-500' : ''}`}
+            onClick={toggleVoiceExpense}
+          >
+            <Mic size={15} /> {isListening ? "Listening..." : "Speak to Add"}
+          </button>
+          <button className="btn-primary" onClick={() => { setForm({ category: "Rent", amount: "", desc: "", date: getLocalDateStr() }); setEditItem(null); setShowAdd(true); }}>
+            <Plus size={15} /> Add Expense
+          </button>
+        </div>
       </PageHeader>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">

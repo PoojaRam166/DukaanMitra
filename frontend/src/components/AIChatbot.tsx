@@ -188,6 +188,17 @@ export function AIChatbot() {
           {/* Input */}
           <div className="p-4 bg-white border-t border-gray-100">
             <form onSubmit={handleSend} className="flex gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={
+                  language === 'te' ? "మైక్‌పై మాట్లాడండి లేదా టైప్ చేయండి..." : 
+                  language === 'bi' ? "Ask in Telugu or English (తెలుగు/English)..." :
+                  "Ask about sales, inventory..."
+                }
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-0"
+              />
               <button
                 type="button"
                 onClick={isListening ? undefined : startListening}
@@ -207,21 +218,10 @@ export function AIChatbot() {
                   <Mic size={16} />
                 )}
               </button>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={
-                  language === 'te' ? "మైక్‌పై మాట్లాడండి లేదా టైప్ చేయండి..." : 
-                  language === 'bi' ? "Ask in Telugu or English (తెలుగు/English)..." :
-                  "Ask about sales, inventory..."
-                }
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-0"
-              />
               <button
                 type="submit"
                 disabled={!input.trim()}
-                className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 hover:bg-blue-700 transition-colors"
+                className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50 hover:bg-blue-700 transition-colors flex-shrink-0"
               >
                 <Send size={16} />
               </button>

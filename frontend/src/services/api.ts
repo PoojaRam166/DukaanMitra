@@ -140,4 +140,5 @@ export const settingsApi = {
 export const chatApi = {
   sendMessage: (message: string, language?: string) => request<any>('POST', '/chat', { message, language }),
   parseBilling: (transcript: string) => request<any>('POST', '/chat/parse-billing', { transcript }),
+  parseExpense: (transcript: string) => request<any>('POST', '/chat/parse-expense', { transcript }),
 };
