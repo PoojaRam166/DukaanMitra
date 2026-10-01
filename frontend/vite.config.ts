@@ -76,7 +76,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         '/api': {
-          target: 'http://127.0.0.1:5000',
+          target: 'https://adventurous-enthusiasm-production-3c9d.up.railway.app',
           changeOrigin: true,
         },
       },
