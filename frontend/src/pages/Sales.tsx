@@ -35,11 +35,11 @@ export default function Sales({ onNavigate }: { onNavigate?: (p: Page) => void }
   }, [activeFilter]);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-500 text-sm">Loading sales data...</div>;
+    return <div className="flex items-center justify-center min-h-[60vh] text-gray-500 text-sm">Loading sales data...</div>;
   }
   
   if (error || !data) {
-    return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 text-sm">
+    return <div className="flex flex-col items-center justify-center min-h-[60vh] text-red-500 text-sm">
       <p className="font-bold mb-2">Error loading sales data</p>
       <p>{error || "No data received"}</p>
     </div>;

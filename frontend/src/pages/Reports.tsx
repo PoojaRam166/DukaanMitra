@@ -25,7 +25,7 @@ export default function Reports({ onNavigate }: { onNavigate?: (p: Page) => void
   }, [filter]);
 
   if (loading || !data) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-500 text-sm">Loading reports...</div>;
+    return <div className="flex items-center justify-center min-h-[60vh] text-gray-500 text-sm">Loading reports...</div>;
   }
 
   const reports = [

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Edit2 } from "lucide-react";
+import { Plus, Trash2, Edit2, TrendingDown } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatCard } from "../components/ui/StatCard";
 import { Card } from "../components/ui/Card";
@@ -48,8 +48,10 @@ export default function Expenses() {
   // using LOCAL date (see getLocalDateStr above) instead of UTC so the
   // comparison stays correct regardless of the user's timezone.
   const todayStr = getLocalDateStr();
+  const currentMonthStr = todayStr.slice(0, 7); // "YYYY-MM"
+
   const today = expenses.filter((e) => String(e.date).slice(0, 10) === todayStr).reduce((s, e) => s + parseFloat(e.amount), 0);
-  const month = expenses.reduce((s, e) => s + parseFloat(e.amount), 0);
+  const month = expenses.filter((e) => String(e.date).slice(0, 7) === currentMonthStr).reduce((s, e) => s + parseFloat(e.amount), 0);
   const largest = expenses.length > 0 ? Math.max(...expenses.map((e) => parseFloat(e.amount))) : 0;
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -97,19 +99,30 @@ export default function Expenses() {
         </button>
       </PageHeader>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
         {[
           { label: "Today's Expenses", val: `₹${today.toLocaleString("en-IN")}`, color: "text-[#DC2626]" },
           { label: "This Month", val: `₹${month.toLocaleString("en-IN")}`, color: "text-[#D97706]" },
           { label: "Largest Expense", val: `₹${largest.toLocaleString("en-IN")}`, color: "text-[#3B5BDB]" },
-        ].map(({ label, val, color }) => (
-          <StatCard key={label} label={label} value={val} valueColor={color} centered />
+        ].map(({ label, val, color }, idx) => (
+          <StatCard className={idx === 2 ? "col-span-2 md:col-span-1" : ""} key={label} label={label} value={val} valueColor={color} centered />
         ))}
       </div>
 
       <Card noPadding>
         {loading ? (
           <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Loading expenses...</div>
+        ) : expenses.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-14 h-14 bg-[#FEE2E2] rounded-2xl flex items-center justify-center mb-4">
+              <TrendingDown size={26} className="text-[#DC2626]" />
+            </div>
+            <h3 className="font-display font-extrabold text-base text-[#1E2A3B] mb-1">No expenses yet</h3>
+            <p className="text-sm text-gray-400 mb-4">Add your first expense to start tracking</p>
+            <button className="btn-primary" onClick={() => { setForm({ category: "Rent", amount: "", desc: "", date: getLocalDateStr() }); setEditItem(null); setShowAdd(true); }}>
+              <Plus size={14} /> Add Expense
+            </button>
+          </div>
         ) : (
           <Table columns={["Date", "Category", "Description", "Amount", "Actions"]} minWidth="500px">
             {expenses.map((e) => (

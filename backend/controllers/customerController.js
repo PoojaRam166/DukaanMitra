@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { getPrefs, createNotification } = require('../utils/notify');
+const jwt = require('jsonwebtoken');
 
 // GET /api/customers?search=
 const getCustomers = async (req, res, next) => {
@@ -22,7 +23,14 @@ const getCustomers = async (req, res, next) => {
     query += ' GROUP BY c.id ORDER BY c.created_at DESC';
 
     const result = await db.query(query, params);
-    res.json({ success: true, data: result.rows });
+    
+    // Attach secure portal tokens
+    const data = result.rows.map(r => ({
+      ...r,
+      portal_token: jwt.sign({ customerId: r.id }, process.env.JWT_SECRET)
+    }));
+    
+    res.json({ success: true, data });
   } catch (err) {
     next(err);
   }
@@ -43,7 +51,10 @@ const getCustomerById = async (req, res, next) => {
       [req.params.id, req.user.id]
     );
 
-    res.json({ success: true, data: { ...customerResult.rows[0], purchase_history: billsResult.rows } });
+    const customer = customerResult.rows[0];
+    customer.portal_token = jwt.sign({ customerId: customer.id }, process.env.JWT_SECRET);
+    
+    res.json({ success: true, data: { ...customer, purchase_history: billsResult.rows } });
   } catch (err) {
     next(err);
   }
@@ -54,6 +65,13 @@ const createCustomer = async (req, res, next) => {
   try {
     const { name, phone, email } = req.body;
     if (!name || !phone) return res.status(400).json({ success: false, message: 'Name and phone are required' });
+
+    // Check if customer already exists for this shop owner
+    const existing = await db.query('SELECT * FROM customers WHERE phone = $1 AND user_id = $2', [phone, req.user.id]);
+    if (existing.rows.length > 0) {
+      // Return the existing customer gracefully instead of creating a duplicate
+      return res.status(200).json({ success: true, message: 'Customer already exists', data: existing.rows[0] });
+    }
 
     const result = await db.query(
       'INSERT INTO customers (user_id, name, phone, email) VALUES ($1, $2, $3, $4) RETURNING *',
@@ -99,9 +117,25 @@ const updateCustomer = async (req, res, next) => {
 // DELETE /api/customers/:id
 const deleteCustomer = async (req, res, next) => {
   try {
+    // SECURITY CHECK: Prevent deleting customers who still owe us money!
+    // If they are deleted, ON DELETE SET NULL makes their credit bills anonymous,
+    // permanently losing track of who owes the debt.
+    const unpaidCheck = await db.query(
+      `SELECT COUNT(id) FROM bills 
+       WHERE customer_id = $1 AND user_id = $2 AND payment_method = 'credit' AND amount_paid < total`,
+      [req.params.id, req.user.id]
+    );
+
+    if (parseInt(unpaidCheck.rows[0].count) > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete customer. They still have pending credit (unpaid dues) that must be settled first.' 
+      });
+    }
+
     const result = await db.query('DELETE FROM customers WHERE id = $1 AND user_id = $2 RETURNING id', [req.params.id, req.user.id]);
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Customer not found' });
-    res.json({ success: true, message: 'Customer deleted' });
+    res.json({ success: true, message: 'Customer deleted successfully' });
   } catch (err) {
     next(err);
   }

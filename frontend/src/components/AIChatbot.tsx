@@ -7,7 +7,14 @@ export function AIChatbot() {
   const { lang: language } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: "bot" | "user"; content: string }[]>([
-    { role: "bot", content: language === 'te' ? "నమస్తే! నేను మీ AI దుకాణమిత్ర సహాయకుడిని. నేను మీకు విక్రయాలను విశ్లేషించడంలో, డిమాండ్‌ను అంచనా వేయడంలో లేదా మీ ఇన్వెంటరీ గురించిన ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయపడగలను." : "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." }
+    { 
+      role: "bot", 
+      content: language === 'te' 
+        ? "నమస్తే! నేను మీ AI దుకాణమిత్ర సహాయకుడిని. నేను మీకు విక్రయాలను విశ్లేషించడంలో, డిమాండ్‌ను అంచనా వేయడంలో లేదా మీ ఇన్వెంటరీ గురించిన ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయపడగలను." 
+        : language === 'bi' 
+          ? "హలో! నేను మీ AI దుకాణమిత్ర Assistant. మీ sales ని analyze చేయడానికి లేదా inventory గురించి ప్రశ్నలకు సమాధానం ఇవ్వడానికి నేను help చేయగలను."
+          : "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." 
+    }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +23,14 @@ export function AIChatbot() {
 
   useEffect(() => {
     if (messages.length === 1) {
-      setMessages([{ role: "bot", content: language === 'te' ? "నమస్తే! నేను మీ AI దుకాణమిత్ర సహాయకుడిని. నేను మీకు విక్రయాలను విశ్లేషించడంలో, డిమాండ్‌ను అంచనా వేయడంలో లేదా మీ ఇన్వెంటరీ గురించిన ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయపడగలను." : "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." }]);
+      setMessages([{ 
+        role: "bot", 
+        content: language === 'te' 
+          ? "నమస్తే! నేను మీ AI దుకాణమిత్ర సహాయకుడిని. నేను మీకు విక్రయాలను విశ్లేషించడంలో, డిమాండ్‌ను అంచనా వేయడంలో లేదా మీ ఇన్వెంటరీ గురించిన ప్రశ్నలకు సమాధానం ఇవ్వడంలో సహాయపడగలను." 
+          : language === 'bi' 
+            ? "హలో! నేను మీ AI దుకాణమిత్ర Assistant. మీ sales ని analyze చేయడానికి లేదా inventory గురించి ప్రశ్నలకు సమాధానం ఇవ్వడానికి నేను help చేయగలను."
+            : "Hi! I'm your AI DukaanMitra assistant. I can help you analyze sales, predict demand, or answer questions about your inventory." 
+      }]);
     }
   }, [language]);
 
@@ -24,7 +38,27 @@ export function AIChatbot() {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = langCode === 'te' ? 'te-IN' : 'en-US';
+      
+      const isTelugu = langCode === 'te' || langCode === 'bi';
+      utterance.lang = isTelugu ? 'te-IN' : 'en-US';
+      
+      // Explicitly assign the correct system voice to fix OS defaults ignoring the lang tag
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        let voice;
+        if (isTelugu) {
+          // Find a Telugu voice to ensure it can read the Telugu script properly
+          voice = voices.find(v => v.lang === 'te-IN' || v.name.toLowerCase().includes('telugu'));
+          // If no pure Telugu voice, fallback to Indian English which handles Tanglish accents better
+          if (!voice) voice = voices.find(v => v.lang === 'en-IN');
+        } else {
+          // English
+          voice = voices.find(v => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang === 'en-IN');
+        }
+        
+        if (voice) utterance.voice = voice;
+      }
+      
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -36,7 +70,7 @@ export function AIChatbot() {
       return;
     }
     const recognition = new SpeechRecognition();
-    recognition.lang = language === 'te' ? 'te-IN' : 'en-US';
+    recognition.lang = (language === 'te' || language === 'bi') ? 'te-IN' : 'en-US';
     recognition.interimResults = false;
     
     recognition.onstart = () => setIsListening(true);
@@ -157,18 +191,31 @@ export function AIChatbot() {
               <button
                 type="button"
                 onClick={isListening ? undefined : startListening}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors flex-shrink-0 ${
-                  isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 relative ${
+                  isListening 
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/40 ring-2 ring-red-500/50' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
                 title="Speak"
               >
-                {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                {isListening ? (
+                  <>
+                    <span className="absolute inset-0 rounded-xl animate-ping bg-red-400 opacity-75"></span>
+                    <Mic size={16} className="relative z-10" />
+                  </>
+                ) : (
+                  <Mic size={16} />
+                )}
               </button>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={language === 'te' ? "మైక్‌పై మాట్లాడండి లేదా టైప్ చేయండి..." : "Ask about sales, inventory..."}
+                placeholder={
+                  language === 'te' ? "మైక్‌పై మాట్లాడండి లేదా టైప్ చేయండి..." : 
+                  language === 'bi' ? "Ask in Telugu or English (తెలుగు/English)..." :
+                  "Ask about sales, inventory..."
+                }
                 className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-0"
               />
               <button

@@ -5,24 +5,28 @@ const getReportsData = async (req, res, next) => {
   try {
     const timeFilter = req.query.filter || 'This Month';
     
-    let dateFilter = "DATE_TRUNC('month', CURRENT_DATE)"; // This month start
-    if (timeFilter === 'Last Month') dateFilter = "DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND created_at < DATE_TRUNC('month', CURRENT_DATE)";
-    else if (timeFilter === 'Last 3 Months') dateFilter = "DATE_TRUNC('month', CURRENT_DATE - INTERVAL '3 months')";
+    let lowerBound = "DATE_TRUNC('month', CURRENT_DATE)";
+    let upperBound = "NOW() + INTERVAL '10 years'"; // Effectively no upper bound for 'This Month' or 'Last 3 Months'
     
-    let salesQuery = `WHERE created_at >= ${dateFilter.split(' AND ')[0]}`;
-    if (dateFilter.includes('AND')) salesQuery = `WHERE created_at >= ${dateFilter}`;
+    if (timeFilter === 'Last Month') {
+      lowerBound = "DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')";
+      upperBound = "DATE_TRUNC('month', CURRENT_DATE)";
+    } else if (timeFilter === 'Last 3 Months') {
+      lowerBound = "DATE_TRUNC('month', CURRENT_DATE - INTERVAL '3 months')";
+    }
 
     const [salesData, expenseData, inventoryData, customerData] = await Promise.all([
       // Sales stats
       db.query(`
         SELECT COALESCE(SUM(total), 0) AS total_sales, COUNT(*) AS bills_count 
-        FROM bills ${salesQuery} AND user_id = $1
+        FROM bills 
+        WHERE created_at >= ${lowerBound} AND created_at < ${upperBound} AND user_id = $1
       `, [req.user.id]),
       // Expense stats
       db.query(`
         SELECT COALESCE(SUM(amount), 0) AS total_expenses, COUNT(DISTINCT category) AS categories 
         FROM expenses 
-        WHERE date >= ${dateFilter.split(' AND ')[0].replace('created_at', 'date')} AND user_id = $1
+        WHERE date >= ${lowerBound} AND date < ${upperBound} AND user_id = $1
       `, [req.user.id]),
       // Inventory stats
       db.query(`

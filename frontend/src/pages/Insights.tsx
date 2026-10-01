@@ -81,11 +81,11 @@ export default function Insights() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-500 text-sm">Loading insights...</div>;
+    return <div className="flex items-center justify-center min-h-[60vh] text-gray-500 text-sm">Loading insights...</div>;
   }
   
   if (error || !data) {
-    return <div className="flex flex-col items-center justify-center min-h-screen text-red-500 text-sm">
+    return <div className="flex flex-col items-center justify-center min-h-[60vh] text-red-500 text-sm">
       <p className="font-bold mb-2">Error loading insights</p>
       <p>{error || "No data received"}</p>
     </div>;

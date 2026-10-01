@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
-import { Search, Plus, Minus, X, CheckCircle, Printer, Download, Receipt, ArrowLeft, Clock } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Plus, Minus, X, CheckCircle, Printer, Download, Receipt, ArrowLeft, Clock, Share2, History, Mic, MicOff } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import { SearchInput } from "../components/ui/SearchInput";
-import { productApi, billApi, customerApi, settingsApi } from "../services/api";
+import { productApi, billApi, customerApi, settingsApi, chatApi } from "../services/api";
+import { useSettings } from "../context/SettingsContext";
 
 interface CartItem { id: number; name: string; price: number; qty: number; }
 
 export default function Billing() {
+  const { t } = useSettings();
   const [catalog, setCatalog] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -28,15 +30,26 @@ export default function Billing() {
   const [isSavingUpi, setIsSavingUpi] = useState(false);
   const [upiTransactionId, setUpiTransactionId] = useState("");
   const [mobileView, setMobileView] = useState<"products" | "cart">("products");
+  const [shopName, setShopName] = useState("");
+  const [shopGst, setShopGst] = useState("");
+  const [recentBills, setRecentBills] = useState<any[]>([]);
+  const [showRecent, setShowRecent] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     productApi.getAll().then(res => setCatalog(res.data)).catch(() => {});
     customerApi.getAll().then(res => setCustomers(res.data)).catch(() => {});
+    billApi.getAll().then(res => setRecentBills((res.data || []).slice(0, 5))).catch(() => {});
     settingsApi.get().then(res => {
       if (res.data?.settings?.upi_id) {
         setShopUpiId(res.data.settings.upi_id);
       }
+      if (res.data?.settings?.shop_name) setShopName(res.data.settings.shop_name);
+      if (res.data?.settings?.gst_number) setShopGst(res.data.settings.gst_number);
     }).catch(() => {});
+    // Auto-focus search input for fast billing (MyBillBook pattern)
+    setTimeout(() => searchInputRef.current?.focus(), 300);
   }, []);
 
   const results = catalog.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
@@ -50,10 +63,66 @@ export default function Billing() {
   };
 
   const updateQty = (id: number, delta: number) => {
-    setCart((prev) => prev.map((c) => c.id === id ? { ...c, qty: Math.max(1, c.qty + delta) } : c));
+    const product = catalog.find(p => p.id === id);
+    setCart((prev) => prev.map((c) => {
+      if (c.id === id) {
+        const newQty = Math.max(1, c.qty + delta);
+        return { ...c, qty: product ? Math.min(newQty, product.stock) : newQty };
+      }
+      return c;
+    }));
   };
 
   const removeItem = (id: number) => setCart((prev) => prev.filter((c) => c.id !== id));
+
+  const startVoiceBilling = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Voice Input.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearch(transcript);
+      
+      try {
+        const res = await chatApi.parseBilling(transcript);
+        if (res.success && res.data) {
+          const { product_name, quantity } = res.data;
+          
+          if (product_name) {
+            const productWords = product_name.toLowerCase();
+            const qty = quantity || 1;
+            
+            setCatalog((currentCatalog) => {
+              const match = currentCatalog.find(p => p.name.toLowerCase().includes(productWords) || productWords.includes(p.name.toLowerCase()));
+              if (match && match.stock > 0) {
+                setCart((prev) => {
+                  const existing = prev.find((c) => c.id === match.id);
+                  const addQty = Math.min(qty, match.stock - (existing ? existing.qty : 0));
+                  if (addQty <= 0) return prev;
+                  if (existing) return prev.map((c) => c.id === match.id ? { ...c, qty: c.qty + addQty } : c);
+                  return [...prev, { id: match.id, name: match.name, price: parseFloat(match.sell_price), qty: addQty }];
+                });
+                setSearch("");
+              }
+              return currentCatalog;
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse voice command", err);
+      }
+
+    };
+    recognition.start();
+  };
 
   const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
   const discountAmt = Math.round(subtotal * discount / 100);
@@ -140,10 +209,13 @@ export default function Billing() {
             .center { text-align: center; }
             .line { border-bottom: 1px dashed #000; margin: 10px 0; }
             .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+            .shop-name { font-size: 18px; font-weight: bold; margin-bottom: 2px; }
+            .gst { font-size: 11px; color: #666; }
           </style>
         </head>
         <body>
-          <h2 class="center">SHOP RECEIPT</h2>
+          <div class="center shop-name">${shopName || 'SHOP RECEIPT'}</div>
+          ${shopGst ? `<div class="center gst">GSTIN: ${shopGst}</div>` : ''}
           <div class="line"></div>
           <div>Bill No: ${lastBill.bill_number}</div>
           <div>Date: ${new Date().toLocaleString()}</div>
@@ -175,7 +247,8 @@ export default function Billing() {
     if (!lastBill) return;
     
     let text = `================================\n`;
-    text += `         SHOP RECEIPT\n`;
+    text += `  ${shopName || 'SHOP RECEIPT'}\n`;
+    if (shopGst) text += `  GSTIN: ${shopGst}\n`;
     text += `================================\n`;
     text += `Bill No: ${lastBill.bill_number}\n`;
     text += `Date: ${new Date().toLocaleString()}\n`;
@@ -200,28 +273,54 @@ export default function Billing() {
     URL.revokeObjectURL(url);
   };
 
-  // Returning from the "Bill Created" confirmation should drop the user back
-  // into the same cart they just billed (items, discount, customer) so they
-  // can review or adjust it, rather than wiping everything back to empty.
+  // WhatsApp share — formats the receipt as text and opens WhatsApp
+  // (the #1 way Indian shop owners share receipts, per MyBillBook)
+  const handleWhatsAppShare = () => {
+    if (!lastBill) return;
+    let msg = `*${shopName || 'Receipt'}*\n`;
+    msg += `Bill: ${lastBill.bill_number}\n`;
+    msg += `Date: ${new Date().toLocaleDateString('en-IN')}\n`;
+    msg += `---\n`;
+    cart.forEach(item => {
+      msg += `${item.name} ×${item.qty} = ₹${(item.qty * item.price).toLocaleString('en-IN')}\n`;
+    });
+    msg += `---\n`;
+    if (discountAmt > 0) msg += `Discount: -₹${discountAmt.toLocaleString('en-IN')}\n`;
+    msg += `*Total: ₹${total.toLocaleString('en-IN')}*\n`;
+    msg += `Payment: ${lastBill.payment_method === 'credit' ? 'Credit (Pay Later)' : lastBill.payment_method.toUpperCase()}\n`;
+    msg += `\nThank you for shopping! 🙏`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  // Clear everything for a fresh new bill after successful creation.
   const handleBackToBilling = () => {
     setSuccess(false);
     setLastBill(null);
+    setCart([]);
+    setDiscount(0);
+    setCustomerId("");
+    setCustomerName("");
+    setCustomerSearch("");
+    setNewCustomerName("");
+    setNewCustomerPhone("");
+    setCustomerType("walk-in");
+    setUpiTransactionId("");
   };
 
   if (success && lastBill) {
     return (
       <div className="h-full flex flex-col fade-in bg-[#F7F8FA]">
         <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-[#E4E7EC] p-10 max-w-sm w-full text-center shadow-lg">
+          <div className="bg-white rounded-2xl border border-[#E4E7EC] p-8 md:p-10 max-w-md w-full text-center shadow-lg">
           <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${lastBill.payment_method === "credit" ? "bg-amber-100" : "bg-[#DCFCE7]"}`}>
             {lastBill.payment_method === "credit" ? <Clock size={32} className="text-amber-600" /> : <CheckCircle size={32} className="text-green-600" />}
           </div>
           <h2 className="font-display font-extrabold text-xl text-[#1E2A3B] mb-1">Bill Created!</h2>
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 mb-5">
             {lastBill.payment_method === "credit" ? "Marked as credit — payment pending" : "Payment received successfully"}
           </p>
 
-          <div className="bg-[#F7F8FA] rounded-xl p-4 text-left space-y-2 mb-6">
+          <div className="bg-[#F7F8FA] rounded-xl p-4 text-left space-y-2 mb-4">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Bill Number</span>
               <span className="font-bold text-[#3B5BDB]">{lastBill.bill_number}</span>
@@ -244,15 +343,37 @@ export default function Billing() {
             )}
           </div>
 
+          {/* Itemized list — MyBillBook-style bill confirmation */}
+          {cart.length > 0 && (
+            <div className="bg-[#F7F8FA] rounded-xl p-3 text-left mb-5">
+              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Items</div>
+              <div className="space-y-1.5">
+                {cart.map(item => (
+                  <div key={item.id} className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600 truncate flex-1 mr-2">{item.name} <span className="text-gray-400">×{item.qty}</span></span>
+                    <span className="font-semibold text-[#1E2A3B] flex-shrink-0">₹{(item.price * item.qty).toLocaleString("en-IN")}</span>
+                  </div>
+                ))}
+              </div>
+              {discountAmt > 0 && (
+                <div className="flex justify-between text-xs mt-2 pt-2 border-t border-[#E4E7EC]">
+                  <span className="text-gray-500">Discount ({discount}%)</span>
+                  <span className="text-red-500 font-semibold">-₹{discountAmt.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button onClick={handlePrint} className="btn-secondary flex-1 justify-center text-xs py-2"><Printer size={13} /> Print</button>
             <button onClick={handleDownload} className="btn-secondary flex-1 justify-center text-xs py-2"><Download size={13} /> Download</button>
+            <button onClick={handleWhatsAppShare} className="btn-secondary flex-1 justify-center text-xs py-2" style={{ color: '#25D366' }}><Share2 size={13} /> WhatsApp</button>
           </div>
           <button
             className="btn-primary w-full justify-center mt-3"
             onClick={handleBackToBilling}
           >
-            <ArrowLeft size={16} /> Back
+            <Plus size={16} /> New Bill
           </button>
         </div>
         </div>
@@ -265,14 +386,53 @@ export default function Billing() {
       {/* Left — Products */}
       <div className={`flex-1 flex flex-col border-r border-[#E4E7EC] overflow-hidden ${mobileView === "cart" ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-[#E4E7EC] bg-white">
-          <SearchInput placeholder="Search product to add..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <SearchInput 
+                ref={searchInputRef} 
+                placeholder={isListening ? "Listening..." : "Search product to add... (start typing)"} 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && results.length > 0 && results[0].stock > 0) {
+                    addToCart(results[0]);
+                    setSearch("");
+                  }
+                }}
+              />
+            </div>
+            <button 
+              onClick={isListening ? undefined : startVoiceBilling}
+              className={`px-4 h-11 flex-shrink-0 rounded-xl flex items-center gap-2 transition-all font-semibold shadow-sm ${
+                isListening 
+                  ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/40 ring-2 ring-red-500/50' 
+                  : 'bg-gradient-to-r from-[#EEF2FF] to-blue-50 text-[#3B5BDB] hover:from-[#3B5BDB] hover:to-indigo-600 hover:text-white border border-[#3B5BDB]/20'
+              }`}
+              title="Voice Assisted Billing"
+            >
+              {isListening ? (
+                <>
+                  <span className="relative flex h-3 w-3 mr-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                  </span>
+                  {t("listening")}
+                </>
+              ) : (
+                <><Mic size={18} /> <span className="hidden sm:inline">{t("speakItem")}</span></>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 pb-24 md:pb-4">
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {results.map((p) => (
+            {results.map((p) => {
+              const cartItem = cart.find(c => c.id === p.id);
+              
+              return (
               <Card key={p.id} className="hover:border-[#3B5BDB]/40 hover:shadow-sm transition-all cursor-pointer" noPadding>
-                <div className="p-3.5" onClick={() => addToCart(p)}>
+                <div className="p-3.5" onClick={() => !cartItem && addToCart(p)}>
                   <div className="font-semibold text-sm text-[#1E2A3B] mb-1 leading-tight">{p.name}</div>
                   <div className="flex items-center justify-between mt-2">
                     <span className="font-display font-extrabold text-base text-[#3B5BDB]">₹{p.sell_price}</span>
@@ -280,16 +440,46 @@ export default function Billing() {
                       {p.stock > 0 ? `${p.stock} left` : "Out of stock"}
                     </span>
                   </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); addToCart(p); }}
-                    disabled={p.stock === 0}
-                    className="w-full mt-2.5 py-1.5 rounded-lg bg-[#EEF2FF] text-[#3B5BDB] text-xs font-bold hover:bg-[#3B5BDB] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    + Add to Bill
-                  </button>
+                  
+                  {cartItem ? (
+                    <div className="flex items-center justify-between mt-2.5 h-8 bg-[#EEF2FF] rounded-lg border border-[#3B5BDB]/20" onClick={e => e.stopPropagation()}>
+                      <button 
+                        onClick={() => cartItem.qty > 1 ? updateQty(p.id, -1) : removeItem(p.id)}
+                        className="w-10 h-full flex items-center justify-center text-[#3B5BDB] font-bold hover:bg-[#3B5BDB]/10 rounded-l-lg transition-colors"
+                      >
+                        -
+                      </button>
+                      <span className="font-bold text-sm text-[#3B5BDB]">{cartItem.qty} <span className="text-[10px] font-normal opacity-70">in bill</span></span>
+                      <button 
+                        onClick={() => addToCart(p)}
+                        disabled={cartItem.qty >= p.stock}
+                        className="w-10 h-full flex items-center justify-center text-[#3B5BDB] font-bold hover:bg-[#3B5BDB]/10 rounded-r-lg transition-colors disabled:opacity-40"
+                      >
+                        +
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); addToCart(p); }}
+                      disabled={p.stock === 0}
+                      className="w-full mt-2.5 py-1.5 rounded-lg bg-[#EEF2FF] text-[#3B5BDB] text-xs font-bold hover:bg-[#3B5BDB] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                    >
+                      + Add to Bill <span className="hidden xl:inline text-[9px] font-normal opacity-70 ml-1">(Enter to quick-add)</span>
+                    </button>
+                  )}
                 </div>
               </Card>
-            ))}
+            )})}
+            {search && results.length === 0 && (
+              <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <Search size={28} className="text-gray-400" />
+                </div>
+                <h3 className="text-lg font-bold text-[#1E2A3B] mb-2">Item not found</h3>
+                <p className="text-sm font-semibold text-gray-500 mb-1">వస్తువు దొరకలేదు</p>
+                <p className="text-sm text-gray-400">Vastuvu dorakaledhu</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -310,17 +500,50 @@ export default function Billing() {
 
       {/* Right — Cart */}
       <div className={`w-full md:w-[340px] bg-white flex flex-col md:overflow-y-auto border-t md:border-t-0 border-[#E4E7EC] pb-24 md:pb-0 ${mobileView === "products" ? "hidden md:flex" : "flex md:h-full md:max-h-none"}`}>
-        <div className="p-4 border-b border-[#E4E7EC] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button 
-              className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[#3B5BDB]"
-              onClick={() => setMobileView("products")}
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <h2 className="font-display font-extrabold text-base">Current Bill</h2>
+        <div className="p-4 border-b border-[#E4E7EC]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                className="md:hidden p-2 -ml-2 text-gray-500 hover:text-[#3B5BDB]"
+                onClick={() => setMobileView("products")}
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className="font-display font-extrabold text-base">Current Bill</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowRecent(!showRecent)}
+                className={`p-1.5 rounded-lg transition-colors ${showRecent ? 'bg-[#EEF2FF] text-[#3B5BDB]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                title="Recent Bills"
+              >
+                <History size={15} />
+              </button>
+              <span className="md:hidden text-sm font-bold text-[#3B5BDB]">₹{total.toLocaleString("en-IN")}</span>
+            </div>
           </div>
-          <span className="md:hidden text-sm font-bold text-[#3B5BDB]">₹{total.toLocaleString("en-IN")}</span>
+
+          {/* Recent Bills — MyBillBook-style quick access */}
+          {showRecent && (
+            <div className="mt-3 pt-3 border-t border-[#E4E7EC] fade-in">
+              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Recent Bills</div>
+              {recentBills.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-2">No recent bills</p>
+              ) : (
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {recentBills.map((b: any) => (
+                    <div key={b.id} className="flex items-center justify-between bg-[#F9FAFB] rounded-lg p-2 text-xs">
+                      <div>
+                        <span className="font-bold text-[#3B5BDB]">{b.bill_number}</span>
+                        <span className="text-gray-400 ml-2">{new Date(b.created_at).toLocaleDateString('en-IN')}</span>
+                      </div>
+                      <span className="font-bold text-[#1E2A3B]">₹{parseFloat(b.total).toLocaleString('en-IN')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="p-4 border-b border-[#E4E7EC] pt-3">
@@ -412,7 +635,11 @@ export default function Billing() {
                       <Minus size={10} />
                     </button>
                     <span className="w-7 text-center text-sm font-bold">{item.qty}</span>
-                    <button onClick={() => updateQty(item.id, 1)} className="w-6 h-6 rounded-lg bg-white border border-[#E4E7EC] flex items-center justify-center hover:border-[#3B5BDB] transition-colors">
+                    <button 
+                      onClick={() => updateQty(item.id, 1)} 
+                      disabled={item.qty >= (catalog.find(p => p.id === item.id)?.stock || 0)}
+                      className="w-6 h-6 rounded-lg bg-white border border-[#E4E7EC] flex items-center justify-center hover:border-[#3B5BDB] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
                       <Plus size={10} />
                     </button>
                   </div>
@@ -436,10 +663,10 @@ export default function Billing() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 flex-1">Discount</span>
             <div className="relative w-24">
-              <input type="number" min="0" max="100" className="input-field text-sm pr-6 py-1.5 text-right" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} />
+              <input type="number" min="0" max="100" className="input-field text-sm pr-6 py-1.5 text-right" value={discount} onChange={(e) => { const v = parseInt(e.target.value); setDiscount(isNaN(v) ? 0 : Math.min(100, Math.max(0, v))); }} />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
             </div>
-            <span className="text-sm font-semibold text-red-500 w-16 text-right">-₹{discountAmt}</span>
+            <span className="text-sm font-semibold text-red-500 w-16 text-right">-₹{discountAmt || 0}</span>
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-[#E4E7EC]">
             <span className="font-display font-extrabold text-base">Total</span>

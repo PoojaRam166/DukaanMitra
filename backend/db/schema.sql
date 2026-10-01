@@ -90,3 +90,37 @@ CREATE TABLE push_subscriptions (
   auth VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create Notifications table
+CREATE TABLE notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  time VARCHAR(50) DEFAULT 'Just now',
+  priority VARCHAR(50) DEFAULT 'normal',
+  icon VARCHAR(50) DEFAULT 'info',
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create Shop Settings table
+CREATE TABLE shop_settings (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  shop_name VARCHAR(255),
+  phone VARCHAR(50),
+  gst_number VARCHAR(100),
+  address TEXT,
+  upi_id VARCHAR(100),
+  language VARCHAR(50) DEFAULT 'en',
+  currency VARCHAR(50) DEFAULT 'INR',
+  theme VARCHAR(50) DEFAULT 'light',
+  date_format VARCHAR(50) DEFAULT 'DD/MM/YYYY',
+  notify_low_stock BOOLEAN DEFAULT true,
+  notify_out_of_stock BOOLEAN DEFAULT true,
+  notify_daily_sales BOOLEAN DEFAULT true,
+  notify_large_bills BOOLEAN DEFAULT false,
+  notify_new_customer BOOLEAN DEFAULT false,
+  notify_monthly_reports BOOLEAN DEFAULT true
+);

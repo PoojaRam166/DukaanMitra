@@ -49,9 +49,9 @@ async function requestForm<T>(method: string, path: string, formData: FormData):
 // Auth
 export const authApi = {
   login: (phone: string, password: string) => request<any>('POST', '/auth/login', { phone, password }),
-  register: (name: string, phone: string, email: string, password: string) => request<any>('POST', '/auth/register', { name, phone, email, password }),
-  forgotPassword: (phone: string) => request<any>('POST', '/auth/forgotpassword', { phone }),
-  resetPassword: (phone: string, otp: string, newPassword: string) => request<any>('POST', '/auth/resetpassword', { phone, otp, newPassword }),
+  register: (name: string, phone: string, email: string, password: string, shopName: string, address: string) => request<any>('POST', '/auth/register', { name, phone, email, password, shopName, address }),
+  forgotPassword: (email: string) => request<any>('POST', '/auth/forgotpassword', { email }),
+  resetPassword: (email: string, otp: string, newPassword: string) => request<any>('POST', '/auth/resetpassword', { email, otp, newPassword }),
   me: () => request<any>('GET', '/auth/me'),
   logout: () => request<any>('POST', '/auth/logout'),
 };
@@ -139,4 +139,5 @@ export const settingsApi = {
 // Chatbot
 export const chatApi = {
   sendMessage: (message: string, language?: string) => request<any>('POST', '/chat', { message, language }),
+  parseBilling: (transcript: string) => request<any>('POST', '/chat/parse-billing', { transcript }),
 };

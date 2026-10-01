@@ -20,23 +20,23 @@ function PasswordStrength({ password }: { password: string }) {
   if (!password) return null;
 
   return (
-    <div className="mt-2 space-y-2">
-      <div className="flex gap-1">
+    <div className="mt-2.5">
+      <div className="flex gap-1 mb-1.5">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={`flex-1 h-1 rounded-full transition-all ${i < score ? colors[score - 1] : "bg-gray-200"}`} />
+          <div key={i} className={`flex-1 h-1.5 rounded-full transition-all ${i < score ? colors[score - 1] : "bg-gray-200"}`} />
         ))}
       </div>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-500">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold" style={{ color: score > 0 ? 'inherit' : '#9ca3af' }}>
           {password ? labels[score - 1] || t("pwWeak") : ""}
         </span>
-        <div className="flex gap-3">
-          {checks.map(({ label, pass }) => (
-            <span key={label} className={`text-[10px] flex items-center gap-0.5 ${pass ? "text-green-600" : "text-gray-400"}`}>
-              <CheckCircle size={10} /> {label}
-            </span>
-          ))}
-        </div>
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+        {checks.map(({ label, pass }) => (
+          <span key={label} className={`text-[10px] flex items-center gap-1 ${pass ? "text-green-600 font-medium" : "text-gray-400"}`}>
+            <CheckCircle size={12} className={pass ? "text-green-500" : "text-gray-300"} /> {label}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -92,7 +92,7 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
             setError("");
             try {
               // Pass the sanitized 10-digit phone number
-              await authApi.register(form.name, phoneDigits, form.email, form.password);
+              await authApi.register(form.name, phoneDigits, form.email, form.password, form.shopName, form.address);
               await refreshUser();
               onNavigate("dashboard");
             } catch (err: any) {

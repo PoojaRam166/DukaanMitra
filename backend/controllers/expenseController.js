@@ -35,6 +35,9 @@ const createExpense = async (req, res, next) => {
 const updateExpense = async (req, res, next) => {
   try {
     const { date, category, description, amount } = req.body;
+    if (parseFloat(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'Amount must be greater than 0' });
+    }
     const result = await db.query(
       'UPDATE expenses SET date=$1, category=$2, description=$3, amount=$4 WHERE id=$5 AND user_id=$6 RETURNING *',
       [date, category, description, parseFloat(amount), req.params.id, req.user.id]

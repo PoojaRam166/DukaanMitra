@@ -13,6 +13,9 @@ const createBill = async (req, res, next) => {
     if (!payment_method) {
       return res.status(400).json({ success: false, message: 'Payment method is required' });
     }
+    if (discount < 0 || discount > 100) {
+      return res.status(400).json({ success: false, message: 'Discount must be between 0 and 100 percent' });
+    }
 
     await client.query('BEGIN');
 
@@ -20,6 +23,11 @@ const createBill = async (req, res, next) => {
     let subtotal = 0;
     const resolvedItems = [];
     for (const item of items) {
+      if (!item.quantity || item.quantity <= 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, message: 'Item quantity must be greater than zero' });
+      }
+      
       const prodResult = await client.query('SELECT * FROM products WHERE id = $1 AND user_id = $2 FOR UPDATE', [item.product_id, req.user.id]);
       if (prodResult.rows.length === 0) {
         await client.query('ROLLBACK');

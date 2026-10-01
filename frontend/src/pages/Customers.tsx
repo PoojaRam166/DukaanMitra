@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Eye, Edit2, Trash2, Users, ArrowLeft, UserCheck, Wallet, Receipt, TrendingUp } from "lucide-react";
+import { Plus, Eye, Edit2, Trash2, Users, ArrowLeft, UserCheck, Wallet, Receipt, TrendingUp, MessageCircle, Share2 } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatCard } from "../components/ui/StatCard";
 import { Card } from "../components/ui/Card";
@@ -18,6 +18,7 @@ export default function Customers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any | null>(null);
+  const [shopName, setShopName] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
@@ -55,6 +56,13 @@ export default function Customers() {
 
   useEffect(() => { fetchCustomers(); }, [search]);
   useEffect(() => { setHistoryView("bills"); }, [selected?.id]);
+  useEffect(() => {
+    import("../services/api").then(({ settingsApi }) => {
+      settingsApi.get().then(res => {
+        if (res.data?.settings?.shop_name) setShopName(res.data.settings.shop_name);
+      }).catch(() => {});
+    });
+  }, []);
 
   const totalSpent = customers.reduce((s, c) => s + parseFloat(c.total_spent || 0), 0);
   const active = customers.filter((c) => c.active).length;
@@ -124,7 +132,7 @@ export default function Customers() {
     })();
 
     return (
-      <div className="p-6 pb-24 md:pb-6 max-w-4xl mx-auto fade-in">
+      <div className="p-6 pb-24 md:pb-6 max-w-screen-xl mx-auto fade-in">
         <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
           <ArrowLeft size={15} /> Back to Customers
         </button>
@@ -141,14 +149,58 @@ export default function Customers() {
               </span>
             </div>
             {(() => {
-              const pendingDue = (selected.purchase_history || []).filter((b: any) => b.payment_method === 'credit').reduce((sum: number, b: any) => sum + (parseFloat(b.total) - parseFloat(b.amount_paid || 0)), 0);
+              const creditBills = (selected.purchase_history || []).filter((b: any) => b.payment_method === 'credit');
+              const youGave = creditBills.reduce((sum: number, b: any) => sum + parseFloat(b.total), 0);
+              const youGot = creditBills.reduce((sum: number, b: any) => sum + parseFloat(b.amount_paid || 0), 0);
+              const pendingDue = youGave - youGot;
+              
               if (pendingDue > 0) {
                 return (
                   <div className="mt-4 pt-4 border-t border-[#E4E7EC]">
+                    {/* You Gave / You Got Summary (Khatabook Style) */}
+                    <div className="flex justify-between mb-4 text-left bg-[#F9FAFB] rounded-xl p-3 border border-[#E4E7EC]">
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">You Gave</div>
+                        <div className="text-sm font-bold text-red-500">₹{youGave.toLocaleString("en-IN")}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">You Got</div>
+                        <div className="text-sm font-bold text-green-500">₹{youGot.toLocaleString("en-IN")}</div>
+                      </div>
+                    </div>
+                    
                     <div className="text-sm font-semibold text-gray-500 mb-1">Total Due</div>
-                    <div className="font-display font-extrabold text-xl text-orange-600 mb-3">₹{pendingDue.toLocaleString("en-IN")}</div>
-                    <button onClick={() => { setPayAmount(pendingDue.toString()); setShowPayModal(true); }} className="btn-primary w-full justify-center bg-orange-500 hover:bg-orange-600 border-none">
-                      Settle Due
+                    <div className="font-display font-extrabold text-2xl text-orange-600 mb-3">₹{pendingDue.toLocaleString("en-IN")}</div>
+                    
+                    <div className="flex gap-2">
+                      <button onClick={() => { setPayAmount(pendingDue.toString()); setShowPayModal(true); }} className="btn-primary flex-1 justify-center bg-orange-500 hover:bg-orange-600 border-none">
+                        Settle Due
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const shop = shopName || "Our Shop";
+                          const msg = `Hello ${selected.name},\n\nThis is a gentle reminder from *${shop}* regarding your pending due of *₹${pendingDue.toLocaleString("en-IN")}*.\n\nPlease clear the dues at your earliest convenience. Thank you! 🙏`;
+                          window.open(`https://wa.me/91${selected.phone.replace(/\\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                        }} 
+                        className="btn-secondary justify-center px-3" 
+                        style={{ color: '#25D366' }}
+                        title="Send WhatsApp Reminder"
+                      >
+                        <MessageCircle size={16} />
+                      </button>
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        const token = selected.portal_token;
+                        const link = `${window.location.origin}/portal?token=${token}`;
+                        const shop = shopName || "Our Shop";
+                        const msg = `Hello ${selected.name},\n\nYou can now view your live Khata (Credit) balance and bills for *${shop}* online anytime!\n\nClick here to view your account: ${link}\n\nThank you for shopping with us! 🙏`;
+                        window.open(`https://wa.me/91${selected.phone.replace(/\\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                      }} 
+                      className="btn-secondary w-full justify-center mt-2 text-xs border-[#3B5BDB] text-[#3B5BDB] hover:bg-[#EEF2FF]"
+                    >
+                      <Share2 size={14} /> Share Live Khata Link
                     </button>
                   </div>
                 );

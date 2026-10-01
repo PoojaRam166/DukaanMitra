@@ -194,6 +194,21 @@ export const dict: Record<string, Entry> = {
   walkIn: { en: "Walk-in", te: "వాక్-ఇన్" },
   paid: { en: "Paid", te: "చెల్లించారు" },
   noBillsYet: { en: "No bills created yet.", te: "ఇంకా బిల్లులు సృష్టించలేదు." },
+  
+  // Voice Billing
+  speakItem: { en: "Speak Item", te: "మైక్‌లో చెప్పండి" },
+  listening: { en: "Listening...", te: "వింటోంది..." },
+  
+  // About Page
+  aboutSubtitle: { en: "Your comprehensive shop management solution", te: "మీ సమగ్ర దుకాణ నిర్వహణ పరిష్కారం" },
+  aboutDesc: { en: "DukaanMitra is designed to simplify billing, inventory, and customer management for your business. We believe in empowering small and medium business owners with modern, easy-to-use digital tools.", te: "దుకాణమిత్ర మీ వ్యాపారం కోసం బిల్లింగ్, ఇన్వెంటరీ మరియు కస్టమర్ నిర్వహణను సులభతరం చేయడానికి రూపొందించబడింది. చిన్న మరియు మధ్యస్థ వ్యాపార యజమానులకు ఆధునిక, సులభంగా ఉపయోగించగల డిజిటల్ సాధనాలను అందించాలని మేము విశ్వసిస్తున్నాము." },
+  legalPolicies: { en: "Legal & Policies", te: "చట్టపరమైన విధానాలు" },
+  termsOfService: { en: "Terms of Service", te: "సేవా నిబంధనలు" },
+  privacyPolicy: { en: "Privacy Policy", te: "గోప్యతా విధానం" },
+  systemInfo: { en: "System Information", te: "సిస్టమ్ సమాచారం" },
+  appVersion: { en: "App Version", te: "యాప్ వెర్షన్" },
+  environment: { en: "Environment", te: "పర్యావరణం" },
+  platform: { en: "Platform", te: "ప్లాట్‌ఫారమ్" },
 };
 
 /** Compact single-line translator for app chrome (nav, buttons, labels). */

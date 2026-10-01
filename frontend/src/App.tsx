@@ -17,12 +17,13 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import About from "./pages/About";
+import Portal from "./pages/Portal";
 
 export type Page =
   | "landing" | "login" | "register"
   | "dashboard" | "inventory" | "billing" | "customers"
   | "expenses" | "sales" | "reports" | "insights"
-  | "notifications" | "settings" | "help" | "about";
+  | "notifications" | "settings" | "help" | "about" | "portal";
 
 // ---------------------------------------------------------------------
 // URL <-> Page mapping
@@ -67,6 +68,7 @@ const PATH_TO_PAGE: Record<string, Page> = {
   "/settings": "settings",
   "/help": "help",
   "/about": "about",
+  "/portal": "portal",
 };
 
 const PAGE_TO_PATH: Record<Page, string> = {
@@ -85,6 +87,7 @@ const PAGE_TO_PATH: Record<Page, string> = {
   settings: "/settings",
   help: "/help",
   about: "/about",
+  portal: "/portal",
 };
 
 function pageFromLocation(): Page {
@@ -118,10 +121,12 @@ function AppShell() {
   React.useEffect(() => {
     if (loading) return;
     
-    const isPublicPage = page === "landing" || page === "login" || page === "register";
+    const isPublicPage = page === "landing" || page === "login" || page === "register" || page === "portal";
     
     if (user && isPublicPage) {
-      navigate("dashboard");
+      if (page !== "portal") {
+        navigate("dashboard");
+      }
     } else if (!user && !isPublicPage) {
       navigate("login");
     }
@@ -143,6 +148,7 @@ function AppShell() {
   if (page === "landing") return <Landing onNavigate={navigate} />;
   if (page === "login") return <Login onNavigate={navigate} />;
   if (page === "register") return <Register onNavigate={navigate} />;
+  if (page === "portal") return <Portal />;
 
   if (appPages.includes(page)) {
     const pageMap: Record<string, React.ReactElement> = {

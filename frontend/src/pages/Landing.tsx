@@ -273,7 +273,7 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
             </div>
             <span className="font-display font-extrabold text-base">DukaanMitra</span>
           </div>
-          <p className="text-sm text-gray-400 whitespace-pre-line text-center">{tr("© 2024 DukaanMitra. Your shop, smarter and simpler.", "© 2024 డుకాన్‌మిత్ర. మీ దుకాణం, మరింత తెలివైనది మరియు సులభమైనది.")}</p>
+          <p className="text-sm text-gray-400 whitespace-pre-line text-center">{tr(`© ${new Date().getFullYear()} DukaanMitra. Your shop, smarter and simpler.`, `© ${new Date().getFullYear()} డుకాన్‌మిత్ర. మీ దుకాణం, మరింత తెలివైనది మరియు సులభమైనది.`)}</p>
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <Shield size={13} />
             <span className="whitespace-pre-line">{tr("Your data is safe and private", "మీ డేటా సురక్షితంగా మరియు ప్రైవేట్‌గా ఉంటుంది")}</span>

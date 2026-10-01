@@ -50,9 +50,12 @@ export default function Notifications() {
 
   const fetchNotifs = () => {
     notificationApi.getAll().then(res => {
-      setNotifs(res.data);
+      setNotifs(res.data || []);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {
+      setNotifs([]);
+      setLoading(false);
+    });
   };
 
   useEffect(() => {
@@ -73,11 +76,11 @@ export default function Notifications() {
   const unread = notifs.filter((n) => !n.read).length;
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-500 text-sm">Loading notifications...</div>;
+    return <div className="flex items-center justify-center min-h-[60vh] text-gray-500 text-sm">Loading notifications...</div>;
   }
 
   return (
-    <div className="p-6 pb-24 md:pb-6 max-w-3xl mx-auto fade-in">
+    <div className="p-6 pb-24 md:pb-6 max-w-screen-xl mx-auto fade-in">
       <PageHeader
         title={
           <span className="flex items-center gap-2">

@@ -1,36 +1,103 @@
 const db = require('../config/db');
+const ss = require('simple-statistics');
 
 // GET /api/insights
 const getInsightsData = async (req, res, next) => {
   try {
-    const [avg7Days, avg30Days, productDemand] = await Promise.all([
-      // Last 7 days average sales
+    const [dailySales, productDemand] = await Promise.all([
+      // Fetch daily sales for the last 30 days for ML Linear Regression
       db.query(`
-        SELECT COALESCE(SUM(total) / 7, 0) AS avg_sales
-        FROM bills
-        WHERE created_at >= NOW() - INTERVAL '7 days' AND user_id = $1
-      `, [req.user.id]),
-      // Last 30 days average sales
-      db.query(`
-        SELECT COALESCE(SUM(total) / 30, 0) AS avg_sales
+        SELECT DATE(created_at) as date, COALESCE(SUM(total), 0) AS total_sales
         FROM bills
         WHERE created_at >= NOW() - INTERVAL '30 days' AND user_id = $1
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC
       `, [req.user.id]),
       // Product demand analysis (last 30 days)
       db.query(`
         SELECT 
           p.id, p.name, p.stock, p.min_stock,
-          COALESCE(SUM(bi.quantity) / 30.0, 0.1) AS avg_daily -- avoid division by zero later
+          COALESCE(sales.total_qty / 30.0, 0.1) AS avg_daily -- avoid division by zero later
         FROM products p
-        LEFT JOIN bill_items bi ON bi.product_id = p.id
-        LEFT JOIN bills b ON b.id = bi.bill_id AND b.created_at >= NOW() - INTERVAL '30 days' AND b.user_id = $1
+        LEFT JOIN (
+          SELECT bi.product_id, SUM(bi.quantity) as total_qty
+          FROM bill_items bi
+          JOIN bills b ON b.id = bi.bill_id
+          WHERE b.created_at >= NOW() - INTERVAL '30 days' AND b.user_id = $1
+          GROUP BY bi.product_id
+        ) sales ON sales.product_id = p.id
         WHERE p.user_id = $1
-        GROUP BY p.id, p.name, p.stock, p.min_stock
+        GROUP BY p.id, p.name, p.stock, p.min_stock, sales.total_qty
       `, [req.user.id])
     ]);
 
-    const tomorrowAvg = parseFloat(avg7Days.rows[0].avg_sales);
-    const next7Avg = parseFloat(avg30Days.rows[0].avg_sales) * 7;
+    // --- ML Prediction using Custom Gradient Descent ---
+    // Scalable for future bulk data scope
+    let tomorrowMin = 0, tomorrowMax = 0, next7Min = 0, next7Max = 0;
+    
+    if (dailySales.rows.length >= 3) {
+      const N = dailySales.rows.length;
+      const xData = [];
+      const yData = [];
+      
+      dailySales.rows.forEach((row, idx) => {
+        xData.push(idx);
+        yData.push(parseFloat(row.total_sales));
+      });
+
+      // Feature scaling (Normalization) for X to ensure Gradient Descent converges properly
+      const xMean = xData.reduce((a, b) => a + b, 0) / N;
+      const xStd = Math.sqrt(xData.reduce((a, b) => a + Math.pow(b - xMean, 2), 0) / N) || 1;
+      const xNormalized = xData.map(x => (x - xMean) / xStd);
+
+      // Gradient Descent parameters
+      let m = 0; // Slope
+      let b = 0; // Intercept
+      const epochs = 1000;
+      const learningRate = 0.1;
+
+      // Training loop
+      for (let i = 0; i < epochs; i++) {
+        let dm = 0;
+        let db = 0;
+        
+        for (let j = 0; j < N; j++) {
+          const x = xNormalized[j];
+          const y = yData[j];
+          const y_pred = (m * x) + b;
+          const error = y_pred - y;
+          
+          dm += error * x;
+          db += error;
+        }
+        
+        m -= learningRate * (2 / N) * dm;
+        b -= learningRate * (2 / N) * db;
+      }
+
+      // Prediction function
+      const predict = (xRaw) => {
+        const xNorm = (xRaw - xMean) / xStd;
+        return (m * xNorm) + b;
+      };
+
+      const nextDayIdx = N; // Predict for tomorrow
+      const predictedTomorrow = Math.max(0, predict(nextDayIdx)); // Ensure no negative sales
+      
+      let predicted7Days = 0;
+      for(let i = 0; i < 7; i++) {
+        predicted7Days += Math.max(0, predict(nextDayIdx + i));
+      }
+
+      // Add a 10% variance for Min/Max
+      tomorrowMin = Math.round(predictedTomorrow * 0.9);
+      tomorrowMax = Math.round(predictedTomorrow * 1.1);
+      next7Min = Math.round(predicted7Days * 0.9);
+      next7Max = Math.round(predicted7Days * 1.1);
+    } else {
+      // Fallback if not enough data for ML
+      tomorrowMin = 0; tomorrowMax = 0; next7Min = 0; next7Max = 0;
+    }
 
     const stockDemand = productDemand.rows.map(p => {
       const avgDaily = parseFloat(p.avg_daily);
@@ -67,8 +134,8 @@ const getInsightsData = async (req, res, next) => {
       success: true,
       data: {
         forecast: {
-          tomorrow: { min: Math.round(tomorrowAvg * 0.9), max: Math.round(tomorrowAvg * 1.1) },
-          next7Days: { min: Math.round(next7Avg * 0.9), max: Math.round(next7Avg * 1.1) }
+          tomorrow: { min: tomorrowMin, max: tomorrowMax },
+          next7Days: { min: next7Min, max: next7Max }
         },
         stockDemand: stockDemand.sort((a, b) => a.days - b.days).slice(0, 10),
         restockSuggestions

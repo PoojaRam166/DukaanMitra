@@ -66,11 +66,11 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
   const greeting = hour < 12 ? t("goodMorning") : hour < 17 ? t("goodAfternoon") : t("goodEvening");
 
   if (loading) {
-    return <div className="p-6 flex justify-center items-center min-h-screen text-gray-500 text-sm">Loading dashboard...</div>;
+    return <div className="p-6 flex justify-center items-center min-h-[60vh] text-gray-500 text-sm">Loading dashboard...</div>;
   }
   
   if (error || !data) {
-    return <div className="p-6 flex flex-col justify-center items-center min-h-screen text-red-500 text-sm">
+    return <div className="p-6 flex flex-col justify-center items-center min-h-[60vh] text-red-500 text-sm">
       <p className="font-bold mb-2">Error loading dashboard</p>
       <p>{error || "No data received"}</p>
     </div>;
@@ -86,12 +86,12 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
   const salesChange = getChange(data.today_sales, data.yesterday_sales);
 
   const stats = [
+    { title: "To Collect (Udhaar)", value: formatCurrency(data.total_udhaar || 0), change: "Pending Dues", up: false, icon: AlertTriangle, accent: "#DC2626", bg: "#FEE2E2" },
     { title: t("todaysSales"), value: formatCurrency(data.today_sales), change: salesChange.text, up: salesChange.up, icon: TrendingUp, accent: "#3B5BDB", bg: "#EEF2FF" },
     { title: t("yesterdaysSales"), value: formatCurrency(data.yesterday_sales), change: "", up: true, icon: TrendingUp, accent: "#16A34A", bg: "#DCFCE7" },
     { title: t("totalProducts"), value: data.total_products.toString(), change: `${data.out_of_stock} ${t("outOfStock")}`, up: data.out_of_stock === 0, icon: Package, accent: "#D97706", bg: "#FEF3C7" },
     { title: t("lowStockItems"), value: data.low_stock.toString(), change: t("needsAttention"), up: data.low_stock === 0, icon: AlertTriangle, accent: "#DC2626", bg: "#FEE2E2" },
     { title: t("billsToday"), value: data.today_bills.toString(), change: "", up: true, icon: Receipt, accent: "#3B5BDB", bg: "#EEF2FF" },
-    { title: t("estProfit"), value: formatCurrency(data.est_profit), change: t("allTime"), up: data.est_profit >= 0, icon: DollarSign, accent: "#16A34A", bg: "#DCFCE7" },
   ];
 
   return (
@@ -236,12 +236,17 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
                     <stop offset="0%" stopColor="#3B5BDB" stopOpacity={0.15} />
                     <stop offset="100%" stopColor="#3B5BDB" stopOpacity={0} />
                   </linearGradient>
+                  <linearGradient id="eGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#DC2626" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#DC2626" stopOpacity={0} />
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                 <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v) => [`₹${Number(v).toLocaleString("en-IN")}`, "Sales"]} contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }} />
-                <Area type="monotone" dataKey="sales" stroke="#3B5BDB" strokeWidth={2} fill="url(#sGrad)" />
+                <Tooltip formatter={(v, name) => [`₹${Number(v).toLocaleString("en-IN")}`, name === 'sales' ? 'Income' : 'Expenses']} contentStyle={{ borderRadius: 8, border: "1px solid #E4E7EC", fontSize: 12 }} />
+                <Area type="monotone" dataKey="sales" name="sales" stroke="#3B5BDB" strokeWidth={2} fill="url(#sGrad)" />
+                <Area type="monotone" dataKey="expenses" name="expenses" stroke="#DC2626" strokeWidth={2} fill="url(#eGrad)" />
               </AreaChart>
             )}
           </ResponsiveContainer>
@@ -268,24 +273,36 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
 
           <div className="mt-4 pt-4 border-t border-[#E4E7EC]">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t("lowStockAlert")}</h4>
-              {data.low_stock_products.length > 0 && (
-                <button onClick={() => onNavigate("inventory")} className="text-[10px] font-semibold text-[#3B5BDB] hover:underline flex items-center gap-0.5">
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Top Defaulters (Udhaar)</h4>
+              {data.top_defaulters && data.top_defaulters.length > 0 && (
+                <button onClick={() => onNavigate("customers")} className="text-[10px] font-semibold text-[#3B5BDB] hover:underline flex items-center gap-0.5">
                   {t("viewAll")} <ArrowRight size={10} />
                 </button>
               )}
             </div>
             <div className="space-y-2">
-              {data.low_stock_products.slice(0, 5).map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600 truncate max-w-[130px]">{item.name}</span>
-                  <span className={`badge text-[10px] py-0.5 ${item.stock === 0 ? "badge-danger" : item.stock <= item.min_stock / 2 ? "badge-warning" : "badge-gray"}`}>
-                    {item.stock} {t("itemsLeft")}
-                  </span>
+              {data.top_defaulters && data.top_defaulters.slice(0, 3).map((customer: any) => (
+                <div key={customer.id} className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600 truncate max-w-[100px]">{customer.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="badge badge-danger text-[10px] py-0.5">
+                      ₹{customer.balance.toLocaleString('en-IN')}
+                    </span>
+                    {customer.phone && (
+                      <a 
+                        href={`https://wa.me/91${customer.phone.replace(/\D/g, '')}?text=Hi ${customer.name}, this is a gentle reminder that you have a pending due of Rs. ${customer.balance} at our store.`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="w-6 h-6 rounded bg-[#25D366]/10 text-[#25D366] flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-colors"
+                        title="Send WhatsApp Reminder"
+                      >
+                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                      </a>
+                    )}
+                  </div>
                 </div>
               ))}
-              {data.low_stock_products.length === 0 && (
-                <div className="text-xs text-gray-500">{t("allWellStocked")}</div>
+              {(!data.top_defaulters || data.top_defaulters.length === 0) && (
+                <div className="text-xs text-gray-500">No pending dues!</div>
               )}
             </div>
           </div>

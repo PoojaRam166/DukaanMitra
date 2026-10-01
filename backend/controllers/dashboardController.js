@@ -10,7 +10,7 @@ const getDashboard = async (req, res, next) => {
     const yesterdayStart = new Date(todayStart);
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
-    const [todaySales, yesterdaySales, totalSales, totalExpenses, productStats, customerCount, recentBills, lowStock, topProducts, dailySales] =
+    const [todaySales, yesterdaySales, totalSales, totalExpenses, productStats, customerCount, recentBills, lowStock, topProducts, dailySales, totalUdhaar, topDefaulters, dailyExpenses] =
       await Promise.all([
         // Today's sales total
         db.query(
@@ -39,11 +39,7 @@ const getDashboard = async (req, res, next) => {
           WHERE b.user_id = $1
           ORDER BY b.created_at DESC LIMIT 5
         `, [req.user.id]),
-        // Low stock products — includes out-of-stock (stock = 0) items too,
-        // ordered so the most urgent (0 left) show first. Previously this
-        // excluded stock = 0, so fully out-of-stock products never showed
-        // up in the dashboard's low-stock list even though they're the
-        // most urgent case.
+        // Low stock products
         db.query(
           "SELECT id, name, stock, min_stock FROM products WHERE stock <= min_stock AND user_id = $1 ORDER BY stock ASC LIMIT 6", [req.user.id]
         ),
@@ -63,7 +59,39 @@ const getDashboard = async (req, res, next) => {
           GROUP BY TO_CHAR(created_at, 'Dy'), DATE_TRUNC('day', created_at)
           ORDER BY DATE_TRUNC('day', created_at)
         `, [req.user.id]),
+        // Total pending udhaar (Credit)
+        db.query("SELECT COALESCE(SUM(total - amount_paid), 0) AS total FROM bills WHERE payment_method = 'credit' AND user_id = $1", [req.user.id]),
+        // Top 3 defaulters (Customers with highest balance)
+        db.query(`
+          SELECT c.id, c.name, c.phone, SUM(b.total - b.amount_paid) AS balance 
+          FROM customers c 
+          JOIN bills b ON b.customer_id = c.id 
+          WHERE b.payment_method = 'credit' AND b.user_id = $1 
+          GROUP BY c.id, c.name, c.phone 
+          HAVING SUM(b.total - b.amount_paid) > 0 
+          ORDER BY balance DESC 
+          LIMIT 3
+        `, [req.user.id]),
+        // Daily expenses for the last 7 days
+        db.query(`
+          SELECT TO_CHAR(created_at, 'Dy') AS day,
+                 COALESCE(SUM(amount), 0) AS expenses
+          FROM expenses
+          WHERE created_at >= NOW() - INTERVAL '7 days' AND user_id = $1
+          GROUP BY TO_CHAR(created_at, 'Dy'), DATE_TRUNC('day', created_at)
+          ORDER BY DATE_TRUNC('day', created_at)
+        `, [req.user.id]),
       ]);
+
+    // Merge dailySales and dailyExpenses into a single array for the AreaChart
+    const mergedDaily = dailySales.rows.map(ds => {
+      const exp = dailyExpenses.rows.find(de => de.day === ds.day);
+      return {
+        day: ds.day,
+        sales: parseFloat(ds.sales),
+        expenses: exp ? parseFloat(exp.expenses) : 0
+      };
+    });
 
     res.json({
       success: true,
@@ -77,10 +105,12 @@ const getDashboard = async (req, res, next) => {
         out_of_stock: parseInt(productStats.rows[0].out_of_stock),
         low_stock: parseInt(productStats.rows[0].low_stock),
         total_customers: parseInt(customerCount.rows[0].total),
+        total_udhaar: parseFloat(totalUdhaar.rows[0].total),
+        top_defaulters: topDefaulters.rows,
         recent_bills: recentBills.rows,
         low_stock_products: lowStock.rows,
         top_products: topProducts.rows,
-        daily_sales: dailySales.rows,
+        daily_sales: mergedDaily,
       },
     });
 

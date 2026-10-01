@@ -45,7 +45,7 @@ export default function Settings() {
     }
     settingsApi.get().then(res => {
       setData(res.data);
-      setProfileForm({ name: res.data.profile.name, email: res.data.profile.email });
+      setProfileForm({ name: res.data.profile.name || "", email: res.data.profile.email || "" });
       setAvatarUrl(res.data.profile.avatar_url || null);
       setShopForm({
         shop_name: res.data.settings.shop_name || "", phone: res.data.settings.phone || "",
@@ -178,11 +178,11 @@ export default function Settings() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-500 text-sm">Loading settings...</div>;
+    return <div className="flex items-center justify-center min-h-[60vh] text-gray-500 text-sm">Loading settings...</div>;
   }
 
   return (
-    <div className="p-6 pb-24 md:pb-6 max-w-4xl mx-auto fade-in">
+    <div className="p-6 pb-24 md:pb-6 max-w-screen-xl mx-auto fade-in">
       <PageHeader
         title={t("settingsTitle")}
         subtitle={t("settingsSubtitle")}
@@ -227,7 +227,7 @@ export default function Settings() {
             )}
 
             {tab === "profile" && (
-              <form onSubmit={saveProfile} className="space-y-5">
+              <form onSubmit={saveProfile} className="space-y-5 max-w-3xl">
                 <h2 className="font-display font-extrabold text-lg mb-4">{t("profileInformation")}</h2>
                 <div className="flex items-center gap-4 mb-6">
                   {resolveAssetUrl(avatarUrl) ? (
@@ -272,7 +272,7 @@ export default function Settings() {
             )}
 
             {tab === "shop" && (
-              <form onSubmit={saveShop} className="space-y-4">
+              <form onSubmit={saveShop} className="space-y-4 max-w-3xl">
                 <h2 className="font-display font-extrabold text-lg mb-4">{t("shopInformation")}</h2>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">{t("shopName")}</label>
@@ -303,7 +303,7 @@ export default function Settings() {
             )}
 
             {tab === "security" && (
-              <form onSubmit={savePassword} className="space-y-4">
+              <form onSubmit={savePassword} className="space-y-4 max-w-3xl">
                 <h2 className="font-display font-extrabold text-lg mb-4">{t("changePassword")}</h2>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">{t("currentPassword")}</label>
@@ -327,7 +327,7 @@ export default function Settings() {
             )}
 
             {tab === "preferences" && (
-              <form onSubmit={savePreferences} className="space-y-5">
+              <form onSubmit={savePreferences} className="space-y-5 max-w-3xl">
                 <h2 className="font-display font-extrabold text-lg mb-4">{t("preferencesTitle")}</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
@@ -383,7 +383,7 @@ export default function Settings() {
             )}
 
             {tab === "notifications" && (
-              <form onSubmit={saveNotifications} className="space-y-5">
+              <form onSubmit={saveNotifications} className="space-y-5 max-w-3xl">
                 <h2 className="font-display font-extrabold text-lg mb-4">{t("notificationPreferences")}</h2>
                 {[
                   { label: "Low stock alerts", desc: "Get notified when products fall below minimum stock", key: "notify_low_stock" },

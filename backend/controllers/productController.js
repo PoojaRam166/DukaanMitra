@@ -45,7 +45,7 @@ const getProducts = async (req, res, next) => {
     // Compute stock status dynamically
     const products = result.rows.map(p => ({
       ...p,
-      status: p.stock === 0 ? 'out' : p.stock <= p.min_stock / 2 ? 'critical' : p.stock < p.min_stock ? 'low' : 'in'
+      status: p.stock === 0 ? 'out' : p.stock <= p.min_stock / 2 ? 'critical' : p.stock <= p.min_stock ? 'low' : 'in'
     }));
 
     const stats = {
@@ -96,6 +96,7 @@ const createProduct = async (req, res, next) => {
 const updateProduct = async (req, res, next) => {
   try {
     const { name, sku, category, buy_price, sell_price, stock, min_stock, unit } = req.body;
+    if (stock < 0) return res.status(400).json({ success: false, message: 'Stock cannot be negative' });
     const result = await db.query(
       'UPDATE products SET name=$1, sku=$2, category=$3, buy_price=$4, sell_price=$5, stock=$6, min_stock=$7, unit=$8 WHERE id=$9 AND user_id=$10 RETURNING *',
       [name, sku || null, category || null, buy_price || 0, sell_price, stock || 0, min_stock || 0, unit || 'piece', req.params.id, req.user.id]
@@ -139,6 +140,7 @@ const deleteProduct = async (req, res, next) => {
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, message: 'Product deleted' });
   } catch (err) {
+    if (err.code === '23503') return res.status(400).json({ success: false, message: 'Cannot delete product because it has existing sales records. Set stock to 0 instead.' });
     next(err);
   }
 };

@@ -47,6 +47,14 @@ const updateSettings = async (req, res, next) => {
       notify_large_bills, notify_new_customer, notify_monthly_reports
     } = req.body;
 
+    const params = [
+      shop_name, phone, gst_number, address, upi_id,
+      language, currency, theme, date_format,
+      notify_low_stock, notify_out_of_stock, notify_daily_sales,
+      notify_large_bills, notify_new_customer, notify_monthly_reports,
+      userId
+    ].map(v => v === undefined ? null : v);
+
     const result = await db.query(`
       UPDATE shop_settings SET 
         shop_name = COALESCE($1, shop_name),
@@ -66,13 +74,7 @@ const updateSettings = async (req, res, next) => {
         notify_monthly_reports = COALESCE($15, notify_monthly_reports)
       WHERE user_id = $16
       RETURNING *
-    `, [
-      shop_name, phone, gst_number, address, upi_id,
-      language, currency, theme, date_format,
-      notify_low_stock, notify_out_of_stock, notify_daily_sales,
-      notify_large_bills, notify_new_customer, notify_monthly_reports,
-      userId
-    ]);
+    `, params);
 
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {

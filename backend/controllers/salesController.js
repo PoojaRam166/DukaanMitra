@@ -99,9 +99,9 @@ const getSalesData = async (req, res, next) => {
       success: true,
       data: {
         summary: summary.rows[0],
-        trendData: trends.rows,
+        trendData: trends.rows.map(t => ({ ...t, sales: parseFloat(t.sales) })),
         dateTable: daily.rows,
-        bestProducts: bestProducts.rows,
+        bestProducts: bestProducts.rows.map(p => ({ ...p, revenue: parseFloat(p.revenue), units: parseInt(p.units) })),
         paymentData
       },
     });
