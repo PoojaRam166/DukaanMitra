@@ -137,14 +137,14 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
                 {tr("Login to your shop", "మీ దుకాణంలోకి లాగిన్ అవ్వండి")}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-4 whitespace-pre-line">{tr("No credit card required. Free to use.", "క్రెడిట్ కార్డ్ అవసరం లేదు. ఉచితంగా వాడుకోవచ్చు.")}</p>
+            <p className="text-xs text-gray-500 mt-4 whitespace-pre-line">{tr("No credit card required. Free to use.", "క్రెడిట్ కార్డ్ అవసరం లేదు. ఉచితంగా వాడుకోవచ్చు.")}</p>
           </div>
 
           {/* Dashboard preview illustration */}
           <div className="relative hover:-translate-y-2 hover:shadow-2xl transition-all duration-500 rounded-2xl">
             <div className="bg-[#F7F8FA] rounded-2xl p-4 border border-[#E4E7EC] shadow-lg">
               <div className="bg-white rounded-xl p-4 border border-[#E4E7EC] mb-3 hover:shadow-md transition-shadow">
-                <div className="text-xs text-gray-400 font-medium mb-1">{tr("Today's Sales", "ఈరోజు అమ్మకాలు")}</div>
+                <div className="text-xs text-gray-500 font-medium mb-1">{tr("Today's Sales", "ఈరోజు అమ్మకాలు")}</div>
                 <div className="font-display font-extrabold text-2xl text-[#1E2A3B]">₹24,850</div>
                 <div className="text-xs text-green-600 font-semibold mt-1">{tr("↑ 18.4% from yesterday", "↑ నిన్నటి కంటే 18.4%")}</div>
               </div>
@@ -163,7 +163,7 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
               <div className="bg-[#F7F8FA] rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-gray-600">{tr("Sales Trend", "అమ్మకాల ధోరణి")}</span>
-                  <span className="text-[10px] text-gray-400">{tr("Last 7 days", "గత 7 రోజులు")}</span>
+                  <span className="text-[10px] text-gray-500">{tr("Last 7 days", "గత 7 రోజులు")}</span>
                 </div>
                 <div className="flex items-end gap-1 h-12">
                   {[40, 65, 50, 80, 70, 90, 75].map((h, i) => (
@@ -179,7 +179,7 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
                 </div>
                 <div>
                   <div className="text-xs font-bold text-gray-800">{tr("Bill Created!", "బిల్లు సృష్టించబడింది!")}</div>
-                  <div className="text-[10px] text-gray-400">₹1,250 · UPI · Now</div>
+                  <div className="text-[10px] text-gray-500">₹1,250 · UPI · Now</div>
                 </div>
               </div>
             </div>
@@ -273,8 +273,8 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
             </div>
             <span className="font-display font-extrabold text-base">DukaanMitra</span>
           </div>
-          <p className="text-sm text-gray-400 whitespace-pre-line text-center">{tr(`© ${new Date().getFullYear()} DukaanMitra. Your shop, smarter and simpler.`, `© ${new Date().getFullYear()} డుకాన్‌మిత్ర. మీ దుకాణం, మరింత తెలివైనది మరియు సులభమైనది.`)}</p>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <p className="text-sm text-gray-500 whitespace-pre-line text-center">{tr(`© ${new Date().getFullYear()} DukaanMitra. Your shop, smarter and simpler.`, `© ${new Date().getFullYear()} డుకాన్‌మిత్ర. మీ దుకాణం, మరింత తెలివైనది మరియు సులభమైనది.`)}</p>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
             <Shield size={13} />
             <span className="whitespace-pre-line">{tr("Your data is safe and private", "మీ డేటా సురక్షితంగా మరియు ప్రైవేట్‌గా ఉంటుంది")}</span>
           </div>

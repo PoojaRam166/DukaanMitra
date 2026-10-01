@@ -21,7 +21,7 @@ export function Modal({
       <div className={`bg-white rounded-2xl w-full ${maxWidth} shadow-xl fade-in max-h-[90vh] flex flex-col`}>
         <div className="p-6 border-b border-[#E4E7EC] flex items-center justify-between flex-shrink-0">
           <h2 className="font-display font-extrabold text-lg">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-600 transition-colors">
             <X size={20} />
           </button>
         </div>

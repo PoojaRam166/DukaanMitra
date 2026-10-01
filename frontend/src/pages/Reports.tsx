@@ -150,7 +150,7 @@ export default function Reports({ onNavigate }: { onNavigate?: (p: Page) => void
               </div>
               <button
                 onClick={() => exportReportPdf(title, desc, stats)}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                 title="Export"
               >
                 <Download size={15} />
@@ -158,13 +158,13 @@ export default function Reports({ onNavigate }: { onNavigate?: (p: Page) => void
             </div>
 
             <h3 className="font-display font-extrabold text-base text-[#1E2A3B] mb-1">{title}</h3>
-            <p className="text-sm text-gray-400 leading-relaxed mb-4">{desc}</p>
+            <p className="text-sm text-gray-500 leading-relaxed mb-4">{desc}</p>
 
             <div className="flex gap-4 mb-4">
               {stats.map(({ label, val }) => (
                 <div key={label}>
                   <div className="font-display font-extrabold text-base" style={{ color }}>{val}</div>
-                  <div className="text-[11px] text-gray-400">{label}</div>
+                  <div className="text-[11px] text-gray-500">{label}</div>
                 </div>
               ))}
             </div>

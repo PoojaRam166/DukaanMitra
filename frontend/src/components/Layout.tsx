@@ -300,7 +300,7 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
                       <Avatar size={36} />
                       <div className="min-w-0">
                         <div className="text-sm font-bold text-[#1E2A3B] truncate">{displayName}</div>
-                        <div className="text-[11px] text-gray-400 truncate">{user?.email || ""}</div>
+                        <div className="text-[11px] text-gray-500 truncate">{user?.email || ""}</div>
                       </div>
                     </div>
                     <button
@@ -349,7 +349,7 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
           <button
             key={id}
             onClick={() => onNavigate(id)}
-            className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${currentPage === id ? "text-[#3B5BDB]" : "text-gray-400"}`}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${currentPage === id ? "text-[#3B5BDB]" : "text-gray-500"}`}
           >
             <Icon size={18} />
             <span>{t(key)}</span>

@@ -33,7 +33,7 @@ function PasswordStrength({ password }: { password: string }) {
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-1.5">
         {checks.map(({ label, pass }) => (
-          <span key={label} className={`text-[10px] flex items-center gap-1 ${pass ? "text-green-600 font-medium" : "text-gray-400"}`}>
+          <span key={label} className={`text-[10px] flex items-center gap-1 ${pass ? "text-green-600 font-medium" : "text-gray-500"}`}>
             <CheckCircle size={12} className={pass ? "text-green-500" : "text-gray-300"} /> {label}
           </span>
         ))}
@@ -103,14 +103,14 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
           }} className="space-y-6">
             {/* Personal Info */}
             <div>
-              <h3 className="font-display font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">{t("personalInformation")}</h3>
+              <h3 className="font-display font-bold text-sm text-gray-500 uppercase tracking-wider mb-4">{t("personalInformation")}</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("fullName")}</label>
                   <input className="input-field" placeholder="Raj Sharma" value={form.name} onChange={set("name")} required />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("email")} <span className="text-gray-400 font-normal">(Optional)</span></label>
+                  <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("email")} <span className="text-gray-500 font-normal">(Optional)</span></label>
                   <input type="email" className="input-field" placeholder="you@example.com" autoComplete="username" value={form.email} onChange={set("email")} />
                 </div>
                 <div>
@@ -125,7 +125,7 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
                       onChange={set("password")}
                       required
                     />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
                       {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
@@ -151,7 +151,7 @@ export default function Register({ onNavigate }: { onNavigate: (p: Page) => void
 
             {/* Shop Info */}
             <div>
-              <h3 className="font-display font-bold text-sm text-gray-400 uppercase tracking-wider mb-4">{t("shopInformation")}</h3>
+              <h3 className="font-display font-bold text-sm text-gray-500 uppercase tracking-wider mb-4">{t("shopInformation")}</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">{t("shopName")}</label>

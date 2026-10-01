@@ -91,14 +91,14 @@ export default function Portal() {
 
         <Card title="Credit History" noPadding>
           {creditBills.length === 0 ? (
-            <p className="p-6 text-sm text-gray-400 text-center">No credit history found.</p>
+            <p className="p-6 text-sm text-gray-500 text-center">No credit history found.</p>
           ) : (
             <div className="divide-y divide-[#E4E7EC]">
               {creditBills.map((b: any) => (
                 <div key={b.id} className="p-4 flex justify-between items-center">
                   <div>
                     <div className="font-bold text-[#3B5BDB] text-sm mb-0.5">{b.bill_number}</div>
-                    <div className="text-xs text-gray-400">{new Date(b.created_at).toLocaleDateString('en-IN')}</div>
+                    <div className="text-xs text-gray-500">{new Date(b.created_at).toLocaleDateString('en-IN')}</div>
                     {b.items && b.items.length > 0 && (
                       <div className="text-xs text-gray-500 mt-1">
                         {b.items.map((i: any) => i.product_name).join(", ")}
@@ -119,7 +119,7 @@ export default function Portal() {
           )}
         </Card>
 
-        <div className="text-center text-xs text-gray-400 pb-8">
+        <div className="text-center text-xs text-gray-500 pb-8">
           Powered by DukaanMitra
         </div>
       </div>

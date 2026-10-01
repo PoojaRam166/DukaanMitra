@@ -103,7 +103,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
           <p className="text-sm text-gray-500 mt-0.5">{t("dashboardSubtitle")}</p>
         </div>
         <div className="flex items-center gap-2 bg-white border border-[#E4E7EC] rounded-lg px-3 py-2 text-sm text-gray-600 cursor-pointer hover:border-[#3B5BDB]/40 transition-colors self-start sm:self-auto">
-          <Calendar size={14} className="text-gray-400" />
+          <Calendar size={14} className="text-gray-500" />
           <span>{now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
                 data.low_stock > 0 ? `${data.low_stock} ${t("lowOnStockShort")}` : null,
               ].filter(Boolean).join(" · ")}
               {data.low_stock_products?.length > 0 && (
-                <span className="text-gray-400"> — {data.low_stock_products.slice(0, 3).map((p: any) => p.name).join(", ")}{data.low_stock_products.length > 3 ? "…" : ""}</span>
+                <span className="text-gray-500"> — {data.low_stock_products.slice(0, 3).map((p: any) => p.name).join(", ")}{data.low_stock_products.length > 3 ? "…" : ""}</span>
               )}
             </p>
           </div>
@@ -175,7 +175,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
             </div>
             <div>
               <h3 className="font-display font-semibold text-base text-[#1E2A3B]">AI Demand Forecast</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Predicted demand for top items over the next 7 days</p>
+              <p className="text-xs text-gray-500 mt-0.5">Predicted demand for top items over the next 7 days</p>
             </div>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[220px] text-gray-400 text-sm">
+          <div className="flex flex-col items-center justify-center h-[220px] text-gray-500 text-sm">
             <Lightbulb size={32} className="text-gray-300 mb-2" />
             <p>Not enough sales data to generate a forecast.</p>
           </div>
@@ -210,7 +210,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
             <div>
               <h3 className="font-display font-semibold text-base text-[#1E2A3B]">{t("salesOverview")}</h3>
-              <p className="text-xs text-gray-400 mt-0.5">{t("dailyRevenueThisWeek")}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t("dailyRevenueThisWeek")}</p>
             </div>
             <div className="flex gap-1 overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
               {filters.map((f, idx) => (
@@ -273,7 +273,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
 
           <div className="mt-4 pt-4 border-t border-[#E4E7EC]">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Top Defaulters (Udhaar)</h4>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Top Defaulters (Udhaar)</h4>
               {data.top_defaulters && data.top_defaulters.length > 0 && (
                 <button onClick={() => onNavigate("customers")} className="text-[10px] font-semibold text-[#3B5BDB] hover:underline flex items-center gap-0.5">
                   {t("viewAll")} <ArrowRight size={10} />
@@ -323,9 +323,9 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#E4E7EC] bg-[#F9FAFB]">
-                  <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-400">{t("tblProduct")}</th>
-                  <th className="text-right py-2.5 px-4 text-xs font-semibold text-gray-400">{t("tblUnits")}</th>
-                  <th className="text-right py-2.5 px-4 text-xs font-semibold text-gray-400">{t("tblRevenue")}</th>
+                  <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-500">{t("tblProduct")}</th>
+                  <th className="text-right py-2.5 px-4 text-xs font-semibold text-gray-500">{t("tblUnits")}</th>
+                  <th className="text-right py-2.5 px-4 text-xs font-semibold text-gray-500">{t("tblRevenue")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,10 +360,10 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#E4E7EC] bg-[#F9FAFB]">
-                  <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-400">{t("tblBillNo")}</th>
-                  <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-400">{t("tblCustomer")}</th>
-                  <th className="text-right py-2.5 px-4 text-xs font-semibold text-gray-400">{t("tblAmount")}</th>
-                  <th className="text-center py-2.5 px-4 text-xs font-semibold text-gray-400">{t("tblStatus")}</th>
+                  <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-500">{t("tblBillNo")}</th>
+                  <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-500">{t("tblCustomer")}</th>
+                  <th className="text-right py-2.5 px-4 text-xs font-semibold text-gray-500">{t("tblAmount")}</th>
+                  <th className="text-center py-2.5 px-4 text-xs font-semibold text-gray-500">{t("tblStatus")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -372,11 +372,11 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
                     <td className="py-3 px-4 text-[13px] font-semibold text-[#3B5BDB]">{bill.bill_number}</td>
                     <td className="py-3 px-4">
                       <div className="text-[13px] text-[#1E2A3B] font-medium">{bill.customer_name || t("walkIn")}</div>
-                      <div className="text-[10px] text-gray-400">{new Date(bill.created_at).toLocaleDateString()}</div>
+                      <div className="text-[10px] text-gray-500">{new Date(bill.created_at).toLocaleDateString()}</div>
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="text-[13px] font-bold text-[#1E2A3B]">{formatCurrency(bill.total)}</div>
-                      <div className="text-[10px] text-gray-400 text-right">{bill.payment_method}</div>
+                      <div className="text-[10px] text-gray-500 text-right">{bill.payment_method}</div>
                     </td>
                     <td className="py-3 px-4 text-center">
                       {bill.payment_method === "credit" ? (

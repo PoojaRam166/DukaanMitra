@@ -166,14 +166,14 @@ export default function Expenses() {
 
       <Card noPadding>
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Loading expenses...</div>
+          <div className="flex items-center justify-center py-20 text-gray-500 text-sm">Loading expenses...</div>
         ) : expenses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-14 h-14 bg-[#FEE2E2] rounded-2xl flex items-center justify-center mb-4">
               <TrendingDown size={26} className="text-[#DC2626]" />
             </div>
             <h3 className="font-display font-extrabold text-base text-[#1E2A3B] mb-1">No expenses yet</h3>
-            <p className="text-sm text-gray-400 mb-4">Add your first expense to start tracking</p>
+            <p className="text-sm text-gray-500 mb-4">Add your first expense to start tracking</p>
             <button className="btn-primary" onClick={() => { setForm({ category: "Rent", amount: "", desc: "", date: getLocalDateStr() }); setEditItem(null); setShowAdd(true); }}>
               <Plus size={14} /> Add Expense
             </button>
@@ -182,7 +182,7 @@ export default function Expenses() {
           <Table columns={["Date", "Category", "Description", "Amount", "Actions"]} minWidth="500px">
             {expenses.map((e) => (
               <tr key={e.id} className="table-row border-b border-[#F3F4F6] last:border-0">
-                <td className="py-3 px-4 text-gray-400 text-[13px] whitespace-nowrap">{new Date(e.date).toLocaleDateString("en-IN")}</td>
+                <td className="py-3 px-4 text-gray-500 text-[13px] whitespace-nowrap">{new Date(e.date).toLocaleDateString("en-IN")}</td>
                 <td className="py-3 px-4"><span className="badge badge-info text-[11px]">{e.category}</span></td>
                 <td className="py-3 px-4 text-gray-600 text-[13px]">{e.description}</td>
                 <td className="py-3 px-4 font-bold text-[13px] text-red-600">-₹{parseFloat(e.amount).toLocaleString("en-IN")}</td>

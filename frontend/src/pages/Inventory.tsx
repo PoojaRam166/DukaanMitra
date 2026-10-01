@@ -156,7 +156,7 @@ export default function Inventory() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Loading products...</div>
+          <div className="flex items-center justify-center py-20 text-gray-500 text-sm">Loading products...</div>
         ) : error ? (
           <div className="flex items-center justify-center py-20 text-red-500 text-sm">{error}</div>
         ) : products.length === 0 ? (
@@ -165,19 +165,19 @@ export default function Inventory() {
               <Package size={26} className="text-[#3B5BDB]" />
             </div>
             <h3 className="font-display font-extrabold text-base text-[#1E2A3B] mb-1">No products found</h3>
-            <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
+            <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
           </div>
         ) : (
           <Table columns={["Product", "SKU", "Category", "Buy Price", "Sell Price", "Stock", "Min Stock", "Status", "Actions"]} minWidth="700px">
             {products.map((p) => (
               <tr key={p.id} className="table-row border-b border-[#F3F4F6] last:border-0">
                 <td className="py-3 px-4 font-semibold text-[#1E2A3B] text-[13px]">{p.name}</td>
-                <td className="py-3 px-4 text-gray-400 text-xs font-mono">{p.sku}</td>
+                <td className="py-3 px-4 text-gray-500 text-xs font-mono">{p.sku}</td>
                 <td className="py-3 px-4 text-gray-500 text-[13px]">{p.category}</td>
                 <td className="py-3 px-4 text-gray-600 text-[13px]">₹{p.buy_price}</td>
                 <td className="py-3 px-4 font-semibold text-[13px]">₹{p.sell_price}</td>
                 <td className="py-3 px-4 text-[13px] font-semibold">{p.stock}</td>
-                <td className="py-3 px-4 text-gray-400 text-[13px]">{p.min_stock}</td>
+                <td className="py-3 px-4 text-gray-500 text-[13px]">{p.min_stock}</td>
                 <td className="py-3 px-4">
                   <span className={`badge ${statusBadge[p.status]} text-[11px]`}>{statusLabel[p.status]}</span>
                 </td>
@@ -193,7 +193,7 @@ export default function Inventory() {
         )}
 
         {products.length > 0 && (
-          <div className="p-4 border-t border-[#E4E7EC] flex items-center justify-between text-sm text-gray-400">
+          <div className="p-4 border-t border-[#E4E7EC] flex items-center justify-between text-sm text-gray-500">
             <span>Showing {products.length} of {backendStats.total} products</span>
           </div>
         )}
@@ -215,7 +215,7 @@ export default function Inventory() {
                     onChange={set("category")}
                     autoFocus
                   />
-                  <button type="button" onClick={() => { setIsCustomCategory(false); setForm(f => ({ ...f, category: "" })); }} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button type="button" onClick={() => { setIsCustomCategory(false); setForm(f => ({ ...f, category: "" })); }} className="p-2 text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
                     <X size={18} />
                   </button>
                 </div>

@@ -28,10 +28,10 @@ export default function About() {
           <Card title={t("legalPolicies")}>
              <div className="space-y-3 mt-4">
                 <button onClick={(e) => e.preventDefault()} className="w-full flex items-center justify-between p-3.5 rounded-xl border border-[#E4E7EC] hover:bg-[#F9FAFB] transition-colors text-sm font-semibold text-[#1E2A3B]">
-                   {t("termsOfService")} <ExternalLink size={15} className="text-gray-400" />
+                   {t("termsOfService")} <ExternalLink size={15} className="text-gray-500" />
                 </button>
                 <button onClick={(e) => e.preventDefault()} className="w-full flex items-center justify-between p-3.5 rounded-xl border border-[#E4E7EC] hover:bg-[#F9FAFB] transition-colors text-sm font-semibold text-[#1E2A3B]">
-                   {t("privacyPolicy")} <ExternalLink size={15} className="text-gray-400" />
+                   {t("privacyPolicy")} <ExternalLink size={15} className="text-gray-500" />
                 </button>
              </div>
           </Card>

@@ -9,7 +9,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   ({ wrapperClassName = "", style, ...props }, ref) => {
     return (
       <div className={`relative ${wrapperClassName}`}>
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
         <input
           ref={ref}
           className="input-field"

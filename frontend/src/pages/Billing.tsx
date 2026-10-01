@@ -356,11 +356,11 @@ export default function Billing() {
           {/* Itemized list — MyBillBook-style bill confirmation */}
           {cart.length > 0 && (
             <div className="bg-[#F7F8FA] rounded-xl p-3 text-left mb-5">
-              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Items</div>
+              <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Items</div>
               <div className="space-y-1.5">
                 {cart.map(item => (
                   <div key={item.id} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600 truncate flex-1 mr-2">{item.name} <span className="text-gray-400">×{item.qty}</span></span>
+                    <span className="text-gray-600 truncate flex-1 mr-2">{item.name} <span className="text-gray-500">×{item.qty}</span></span>
                     <span className="font-semibold text-[#1E2A3B] flex-shrink-0">₹{(item.price * item.qty).toLocaleString("en-IN")}</span>
                   </div>
                 ))}
@@ -483,11 +483,11 @@ export default function Billing() {
             {search && results.length === 0 && (
               <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <Search size={28} className="text-gray-400" />
+                  <Search size={28} className="text-gray-500" />
                 </div>
                 <h3 className="text-lg font-bold text-[#1E2A3B] mb-2">Item not found</h3>
                 <p className="text-sm font-semibold text-gray-500 mb-1">వస్తువు దొరకలేదు</p>
-                <p className="text-sm text-gray-400">Vastuvu dorakaledhu</p>
+                <p className="text-sm text-gray-500">Vastuvu dorakaledhu</p>
               </div>
             )}
           </div>
@@ -524,7 +524,7 @@ export default function Billing() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowRecent(!showRecent)}
-                className={`p-1.5 rounded-lg transition-colors ${showRecent ? 'bg-[#EEF2FF] text-[#3B5BDB]' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+                className={`p-1.5 rounded-lg transition-colors ${showRecent ? 'bg-[#EEF2FF] text-[#3B5BDB]' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'}`}
                 title="Recent Bills"
               >
                 <History size={15} />
@@ -536,16 +536,16 @@ export default function Billing() {
           {/* Recent Bills — MyBillBook-style quick access */}
           {showRecent && (
             <div className="mt-3 pt-3 border-t border-[#E4E7EC] fade-in">
-              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Recent Bills</div>
+              <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Recent Bills</div>
               {recentBills.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-2">No recent bills</p>
+                <p className="text-xs text-gray-500 text-center py-2">No recent bills</p>
               ) : (
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {recentBills.map((b: any) => (
                     <div key={b.id} className="flex items-center justify-between bg-[#F9FAFB] rounded-lg p-2 text-xs">
                       <div>
                         <span className="font-bold text-[#3B5BDB]">{b.bill_number}</span>
-                        <span className="text-gray-400 ml-2">{new Date(b.created_at).toLocaleDateString('en-IN')}</span>
+                        <span className="text-gray-500 ml-2">{new Date(b.created_at).toLocaleDateString('en-IN')}</span>
                       </div>
                       <span className="font-bold text-[#1E2A3B]">₹{parseFloat(b.total).toLocaleString('en-IN')}</span>
                     </div>
@@ -614,7 +614,7 @@ export default function Billing() {
                       }}
                     >
                       <div className="font-semibold text-[#1E2A3B]">{c.name}</div>
-                      <div className="text-xs text-gray-400">{c.phone}</div>
+                      <div className="text-xs text-gray-500">{c.phone}</div>
                     </div>
                   ))}
                   {customers.filter(c => c.name.toLowerCase().includes(customerSearch.toLowerCase()) || c.phone.includes(customerSearch)).length === 0 && (
@@ -630,7 +630,7 @@ export default function Billing() {
           {cart.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-center p-4">
               <Receipt size={24} className="text-gray-300 mb-2" />
-              <p className="text-sm text-gray-400">Add products to start billing</p>
+              <p className="text-sm text-gray-500">Add products to start billing</p>
             </div>
           ) : (
             <div className="p-3 space-y-2">
@@ -638,7 +638,7 @@ export default function Billing() {
                 <div key={item.id} className="flex items-start gap-2 bg-[#F9FAFB] rounded-lg p-2.5">
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold text-[#1E2A3B] leading-tight truncate">{item.name}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">₹{item.price} each</div>
+                    <div className="text-xs text-gray-500 mt-0.5">₹{item.price} each</div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button onClick={() => updateQty(item.id, -1)} className="w-6 h-6 rounded-lg bg-white border border-[#E4E7EC] flex items-center justify-center hover:border-[#3B5BDB] transition-colors">
@@ -674,7 +674,7 @@ export default function Billing() {
             <span className="text-sm text-gray-500 flex-1">Discount</span>
             <div className="relative w-24">
               <input type="number" min="0" max="100" className="input-field text-sm pr-6 py-1.5 text-right" value={discount} onChange={(e) => { const v = parseInt(e.target.value); setDiscount(isNaN(v) ? 0 : Math.min(100, Math.max(0, v))); }} />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
             </div>
             <span className="text-sm font-semibold text-red-500 w-16 text-right">-₹{discountAmt || 0}</span>
           </div>
@@ -684,7 +684,7 @@ export default function Billing() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-gray-400 mb-2">Payment Method</p>
+            <p className="text-xs font-semibold text-gray-500 mb-2">Payment Method</p>
             <div className="flex flex-wrap gap-2">
               {(["cash", "upi", "phonepe", "gpay", "paytm", "card", "credit"] as const).map((m) => (
                 <button

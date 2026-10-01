@@ -19,7 +19,7 @@ export function Table({
           <thead>
             <tr className="bg-[#F9FAFB] border-b border-[#E4E7EC]">
               {columns.map((col, i) => (
-                <th key={i} className="text-left py-3 px-4 text-xs font-semibold text-gray-400 whitespace-nowrap">
+                <th key={i} className="text-left py-3 px-4 text-xs font-semibold text-gray-500 whitespace-nowrap">
                   {col}
                 </th>
               ))}

@@ -113,7 +113,7 @@ export default function Insights() {
             </div>
             <div>
               <span>Sales Forecast</span>
-              <p className="text-xs text-gray-400 font-normal mt-0.5">Based on recent sales history — estimates only</p>
+              <p className="text-xs text-gray-500 font-normal mt-0.5">Based on recent sales history — estimates only</p>
             </div>
           </div>
         }
@@ -126,9 +126,9 @@ export default function Insights() {
           ].map(({ label, val, icon, sub }) => (
             <div key={label} className="bg-[#F7F8FA] rounded-xl p-5 border border-[#E4E7EC]">
               <div className="text-2xl mb-2">{icon}</div>
-              <div className="text-xs text-gray-400 font-medium mb-1">{label}</div>
+              <div className="text-xs text-gray-500 font-medium mb-1">{label}</div>
               <div className="font-display font-extrabold text-xl text-[#3B5BDB] mb-1">{val}</div>
-              <div className="text-[11px] text-gray-400 italic">{sub}</div>
+              <div className="text-[11px] text-gray-500 italic">{sub}</div>
             </div>
           ))}
         </div>
@@ -144,7 +144,7 @@ export default function Insights() {
             </div>
             <div>
               <span>Stock Demand Analysis</span>
-              <p className="text-xs text-gray-400 font-normal mt-0.5">Estimated days remaining based on average daily sales</p>
+              <p className="text-xs text-gray-500 font-normal mt-0.5">Estimated days remaining based on average daily sales</p>
             </div>
           </div>
         }
@@ -183,7 +183,7 @@ export default function Insights() {
             </div>
             <div>
               <span>Restock Suggestions</span>
-              <p className="text-xs text-gray-400 font-normal mt-0.5">Products that may need restocking soon</p>
+              <p className="text-xs text-gray-500 font-normal mt-0.5">Products that may need restocking soon</p>
             </div>
           </div>
         }
@@ -200,7 +200,7 @@ export default function Insights() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mb-2">{s.msg}</p>
-                  <div className="flex gap-4 text-[11px] text-gray-400">
+                  <div className="flex gap-4 text-[11px] text-gray-500">
                     <span>Stock: <strong className="text-gray-600">{s.stock}</strong></span>
                     <span>Avg daily: <strong className="text-gray-600">{s.avgDaily}/day</strong></span>
                     <span>Est. remaining: <strong className="text-red-500">{s.days} days</strong></span>
@@ -220,7 +220,7 @@ export default function Insights() {
           <form className="space-y-4" onSubmit={submitRestock}>
             <div>
               <div className="font-display font-extrabold text-sm text-[#1E2A3B]">{restockTarget.name}</div>
-              <div className="text-xs text-gray-400 mt-1">Current stock: {restockTarget.stock} units · Avg daily sales: {restockTarget.avgDaily}/day</div>
+              <div className="text-xs text-gray-500 mt-1">Current stock: {restockTarget.stock} units · Avg daily sales: {restockTarget.avgDaily}/day</div>
             </div>
             {restockError && (
               <div className="bg-red-50 text-red-600 text-xs font-semibold px-3 py-2 rounded-lg">{restockError}</div>

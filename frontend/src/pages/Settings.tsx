@@ -254,7 +254,7 @@ export default function Settings() {
                       {avatarUploading ? <Loader2 size={14} className="animate-spin" /> : null}
                       {avatarUploading ? t("uploading") : t("changePhoto")}
                     </button>
-                    <p className="text-xs text-gray-400 mt-1">{t("photoHint")}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t("photoHint")}</p>
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -309,7 +309,7 @@ export default function Settings() {
                   <label className="block text-sm font-semibold mb-1.5">{t("currentPassword")}</label>
                   <div className="relative">
                     <input type={showPw ? "text" : "password"} required className="input-field pr-10" placeholder="Enter current password" value={pwForm.currentPassword} onChange={e => setPwForm({ ...pwForm, currentPassword: e.target.value })} />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
                       {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
@@ -396,7 +396,7 @@ export default function Settings() {
                   <div key={label} className="flex items-start justify-between gap-4 py-3 border-b border-[#F3F4F6] last:border-0">
                     <div>
                       <div className="text-sm font-semibold text-[#1E2A3B]">{label}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">{desc}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{desc}</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                       <input type="checkbox" checked={(notifForm as any)[key]} onChange={(e) => setNotifForm({ ...notifForm, [key]: e.target.checked })} className="sr-only peer" />

@@ -114,7 +114,7 @@ export default function Notifications() {
             <Bell size={26} className="text-[#3B5BDB]" />
           </div>
           <h3 className="font-display font-bold text-base mb-1">All caught up!</h3>
-          <p className="text-sm text-gray-400">No notifications to show here</p>
+          <p className="text-sm text-gray-500">No notifications to show here</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -136,8 +136,8 @@ export default function Notifications() {
                       {!n.read && <div className="w-2 h-2 rounded-full bg-[#3B5BDB]" />}
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 leading-relaxed mb-1.5">{n.description}</p>
-                  <span className="text-[11px] text-gray-300">{timeAgo(n.created_at)}</span>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-1.5">{n.description}</p>
+                  <span className="text-[11px] text-gray-400">{timeAgo(n.created_at)}</span>
                 </div>
               </div>
             </div>

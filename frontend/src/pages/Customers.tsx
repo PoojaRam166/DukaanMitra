@@ -160,11 +160,11 @@ export default function Customers() {
                     {/* You Gave / You Got Summary (Khatabook Style) */}
                     <div className="flex justify-between mb-4 text-left bg-[#F9FAFB] rounded-xl p-3 border border-[#E4E7EC]">
                       <div>
-                        <div className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">You Gave</div>
+                        <div className="text-[10px] uppercase font-bold text-gray-500 mb-0.5">You Gave</div>
                         <div className="text-sm font-bold text-red-500">₹{youGave.toLocaleString("en-IN")}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] uppercase font-bold text-gray-400 mb-0.5">You Got</div>
+                        <div className="text-[10px] uppercase font-bold text-gray-500 mb-0.5">You Got</div>
                         <div className="text-sm font-bold text-green-500">₹{youGot.toLocaleString("en-IN")}</div>
                       </div>
                     </div>
@@ -244,7 +244,7 @@ export default function Customers() {
           }
         >
           {history.length === 0 ? (
-            <p className="p-6 text-sm text-gray-400 text-center">No purchase history yet</p>
+            <p className="p-6 text-sm text-gray-500 text-center">No purchase history yet</p>
           ) : (
             <>
               <div className="px-4 pt-4 pb-1 text-xs text-gray-500">
@@ -252,7 +252,7 @@ export default function Customers() {
                 {historyView === "aboveAvg" && `Bills above this customer's average order of ₹${avg.toLocaleString("en-IN")}`}
               </div>
               {visibleHistory.length === 0 ? (
-                <p className="p-6 text-sm text-gray-400 text-center">No bills above the average order value</p>
+                <p className="p-6 text-sm text-gray-500 text-center">No bills above the average order value</p>
               ) : (
                 <Table columns={["Bill #", "Date", "Items", "Amount", "Method"]} minWidth="500px">
                   {visibleHistory.map((b: any) => (
@@ -300,9 +300,9 @@ export default function Customers() {
          * clicking the eye icon above sets state but nothing ever appears. */}
         <Modal isOpen={!!viewBill} onClose={() => setViewBill(null)} title={viewBill?.bill_number ? `Bill ${viewBill.bill_number}` : "Bill Items"} maxWidth="max-w-md">
           {viewBillLoading || !viewBill?.items ? (
-            <div className="py-8 text-center text-sm text-gray-400">Loading items...</div>
+            <div className="py-8 text-center text-sm text-gray-500">Loading items...</div>
           ) : viewBill.items.length === 0 ? (
-            <div className="py-8 text-center text-sm text-gray-400">No items found for this bill</div>
+            <div className="py-8 text-center text-sm text-gray-500">No items found for this bill</div>
           ) : (
             <div className="space-y-2">
               {viewBill.items.map((item: any) => (
@@ -424,19 +424,19 @@ export default function Customers() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Loading customers...</div>
+          <div className="flex items-center justify-center py-20 text-gray-500 text-sm">Loading customers...</div>
         ) : customers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-14 h-14 bg-[#EEF2FF] rounded-2xl flex items-center justify-center mb-4">
               <Users size={26} className="text-[#3B5BDB]" />
             </div>
             <h3 className="font-display font-bold text-base mb-1">No customers yet</h3>
-            <p className="text-sm text-gray-400 mb-4">Add your first customer to get started</p>
+            <p className="text-sm text-gray-500 mb-4">Add your first customer to get started</p>
             <button className="btn-primary" onClick={() => setShowAdd(true)}><Plus size={14} /> Add Customer</button>
           </div>
         ) : visibleCustomers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-sm text-gray-400 mb-2">No active customers to show</p>
+            <p className="text-sm text-gray-500 mb-2">No active customers to show</p>
             <button onClick={() => setCustomerFilter("all")} className="text-[#3B5BDB] text-sm font-semibold hover:underline">Show all customers</button>
           </div>
         ) : (
@@ -483,9 +483,9 @@ export default function Customers() {
 
       <Modal isOpen={!!viewBill} onClose={() => setViewBill(null)} title={viewBill?.bill_number ? `Bill ${viewBill.bill_number}` : "Bill Items"} maxWidth="max-w-md">
         {viewBillLoading || !viewBill?.items ? (
-          <div className="py-8 text-center text-sm text-gray-400">Loading items...</div>
+          <div className="py-8 text-center text-sm text-gray-500">Loading items...</div>
         ) : viewBill.items.length === 0 ? (
-          <div className="py-8 text-center text-sm text-gray-400">No items found for this bill</div>
+          <div className="py-8 text-center text-sm text-gray-500">No items found for this bill</div>
         ) : (
           <div className="space-y-2">
             {viewBill.items.map((item: any) => (
