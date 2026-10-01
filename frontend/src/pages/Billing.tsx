@@ -14,7 +14,7 @@ export default function Billing() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [payment, setPayment] = useState<"cash" | "upi" | "card" | "credit">("upi");
+  const [payment, setPayment] = useState<"cash" | "upi" | "phonepe" | "gpay" | "paytm" | "card" | "credit">("upi");
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customerName, setCustomerName] = useState("");
   const [success, setSuccess] = useState(false);
