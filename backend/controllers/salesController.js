@@ -36,7 +36,7 @@ const getSalesData = async (req, res, next) => {
       // Trends (Group by date)
       db.query(`
         SELECT 
-          TO_CHAR(DATE_TRUNC('day', created_at), 'Mon DD') AS date,
+          TO_CHAR(DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), 'Mon DD') AS date,
           COALESCE(SUM(total), 0) AS sales
         FROM bills
         WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClause} AND user_id = $1
@@ -46,7 +46,7 @@ const getSalesData = async (req, res, next) => {
       // Daily Sales Table
       db.query(`
         SELECT 
-          TO_CHAR(DATE_TRUNC('day', b.created_at), 'Mon DD, YYYY') AS date,
+          TO_CHAR(DATE_TRUNC('day', b.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), 'Mon DD, YYYY') AS date,
           COUNT(DISTINCT b.id) AS bills,
           COALESCE(SUM(b.total), 0) AS sales,
           COALESCE(SUM(b.total) / NULLIF(COUNT(DISTINCT b.id), 0), 0) AS avg,
