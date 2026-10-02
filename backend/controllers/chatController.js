@@ -252,6 +252,24 @@ exports.sendMessage = async (req, res, next) => {
         teResponse = `మీ రెగ్యులర్ టాప్ కస్టమర్లు: ${globalTcNames || 'ఇంకా ఎవరూ లేరు'}.`;
         biResponse = `మీ regular top customers list: ${globalTcNames || 'No customers yet'}.`;
       }
+      
+    // 1c. Stock/Product logic
+    } else if (msgLower.includes('available') || msgLower.includes('stock') || msgLower.includes('undha') || msgLower.includes('unnaya') || msgLower.includes('ledu') || mentionedProduct) {
+      if (mentionedProduct) {
+        if (mentionedProduct.stock > 0) {
+          enResponse = `Yes, ${mentionedProduct.name} is available. You have ${mentionedProduct.stock} left in stock.`;
+          teResponse = `అవును, ${mentionedProduct.name} అందుబాటులో ఉంది. మీ వద్ద ${mentionedProduct.stock} స్టాక్ ఉంది.`;
+          biResponse = `Yes, ${mentionedProduct.name} available గా ఉంది. మీ దగ్గర ${mentionedProduct.stock} stock ఉంది.`;
+        } else {
+          enResponse = `No, ${mentionedProduct.name} is currently out of stock.`;
+          teResponse = `లేదు, ${mentionedProduct.name} ప్రస్తుతం స్టాక్ లేదు.`;
+          biResponse = `No, ${mentionedProduct.name} ప్రస్తుతం out of stock అయిపోయింది.`;
+        }
+      } else {
+        enResponse = `Here is your current inventory: ${pNames || 'No items in stock yet'}.`;
+        teResponse = `మీ ప్రస్తుత ఇన్వెంటరీ ఇక్కడ ఉంది: ${pNames || 'ఇంకా స్టాక్ లేదు'}.`;
+        biResponse = `మీ current inventory: ${pNames || 'No items yet'}.`;
+      }
     
     // 2. Expenses Logic
     } else if (msgLower.includes('expense') || msgLower.includes('karchu') || msgLower.includes('ఖర్చు') || msgLower.includes('supplier')) {
