@@ -58,3 +58,8 @@
 {"text":"gpay sales entha?","intent":"payment_sales_query","payment_method":"google_pay","response":"Google Pay payments ni check chesthanu."}
 {"text":"cash lo entha undi?","intent":"cash_balance_query","payment_method":"cash","response":"Cash balance ni check chesthanu."}
 {"text":"UPI payment vachinda?","intent":"payment_status_query","payment_method":"upi","response":"UPI payment status ni check chesthanu."}
+{"text":"na regular customers evaru?","intent":"customer_list_query","customer":"regular","response":"Regular customers list ni check chesthanu."}
+{"text":"ekkua konne customers evaru?","intent":"top_customer_query","customer":"all","response":"Highest-purchase customers ni check chesthanu."}
+{"text":"Ravi last purchase enti?","intent":"customer_purchase_query","customer":"Ravi","response":"Ravi recent purchase details ni check chesthanu."}
+{"text":"Ravi eppudu vachadu?","intent":"customer_visit_query","customer":"Ravi","response":"Ravi recent visit details ni check chesthanu."}
+{"text":"new customers entha mandi?","intent":"customer_count_query","customer":"new","response":"New customer count ni check chesthanu."}
