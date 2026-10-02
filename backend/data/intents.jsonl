@@ -36,3 +36,13 @@
 {"text":"electricity bill entha vachindi?","intent":"expense_query","expense_type":"electricity","response":"Electricity expense ni check chesthanu."}
 {"text":"transport expense entha?","intent":"expense_query","expense_type":"transport","response":"Transport expenses ni check chesthanu."}
 {"text":"total expenses cheppu","intent":"expense_query","expense_type":"all","response":"Total expenses ni check chesthanu."}
+{"text":"rice undha?","intent":"product_availability","product":"rice","response":"Rice availability ni check chesthanu."}
+{"text":"atta stock undha?","intent":"product_availability","product":"atta","response":"Atta availability ni check chesthanu."}
+{"text":"maida undha?","intent":"product_availability","product":"maida","response":"Maida availability ni check chesthanu."}
+{"text":"toor dal undha?","intent":"product_availability","product":"toor dal","response":"Toor dal availability ni check chesthanu."}
+{"text":"moong dal stock undha?","intent":"product_availability","product":"moong dal","response":"Moong dal availability ni check chesthanu."}
+{"text":"salt stock undha?","intent":"product_availability","product":"salt","response":"Salt availability ni check chesthanu."}
+{"text":"tea powder undha?","intent":"product_availability","product":"tea powder","response":"Tea powder availability ni check chesthanu."}
+{"text":"biscuits unnaya?","intent":"product_availability","product":"biscuits","response":"Biscuits availability ni check chesthanu."}
+{"text":"soap stock undha?","intent":"product_availability","product":"soap","response":"Soap availability ni check chesthanu."}
+{"text":"detergent undha?","intent":"product_availability","product":"detergent","response":"Detergent availability ni check chesthanu."}
