@@ -19,7 +19,7 @@ export default function Portal() {
       return;
     }
 
-    fetch(`http://localhost:5000/api/portal/customer/${token}`)
+    fetch(`/api/portal/customer/${token}`)
       .then(res => res.json())
       .then(resData => {
         if (resData.error) {
