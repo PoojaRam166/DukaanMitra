@@ -135,6 +135,14 @@ exports.sendMessage = async (req, res, next) => {
       User: "supplier nundi em konali?"
       AI: "Current stock based on purchase requirements ni check chesthanu."
       
+      Example Interactions for Payment Queries:
+      User: "cash sales entha?"
+      AI: "Cash sales ni check chesthanu. ఈరోజు క్యాష్ సేల్స్ ₹[X]."
+      User: "phonepe lo entha vachindi?"
+      AI: "PhonePe payments ni check chesthanu."
+      User: "UPI payment vachinda?"
+      AI: "UPI payment status ni check chesthanu."
+      
       Rules for your response:
       1. Be highly conversational, warm, and extremely respectful (like a trusted employee or friend).
       2. Keep it concise (under 3 short sentences). No long paragraphs.

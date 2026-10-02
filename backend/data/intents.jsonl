@@ -52,3 +52,9 @@
 {"text":"sugar stock takkuva undi order pettu","intent":"reorder_request","product":"sugar","response":"Sugar reorder requirement ni record chesthanu."}
 {"text":"supplier nundi em konali?","intent":"purchase_recommendation","product":"all","response":"Current stock based on purchase requirements ni check chesthanu."}
 {"text":"next purchase list cheppu","intent":"purchase_list_query","product":"all","response":"Next purchase list ni prepare chesthanu."}
+{"text":"cash sales entha?","intent":"payment_sales_query","payment_method":"cash","response":"Cash sales ni check chesthanu."}
+{"text":"UPI sales entha?","intent":"payment_sales_query","payment_method":"upi","response":"UPI sales ni check chesthanu."}
+{"text":"phonepe lo entha vachindi?","intent":"payment_sales_query","payment_method":"phonepe","response":"PhonePe payments ni check chesthanu."}
+{"text":"gpay sales entha?","intent":"payment_sales_query","payment_method":"google_pay","response":"Google Pay payments ni check chesthanu."}
+{"text":"cash lo entha undi?","intent":"cash_balance_query","payment_method":"cash","response":"Cash balance ni check chesthanu."}
+{"text":"UPI payment vachinda?","intent":"payment_status_query","payment_method":"upi","response":"UPI payment status ni check chesthanu."}
