@@ -28,3 +28,11 @@
 {"text":"total pending amount entha?","intent":"total_credit_query","customer":"all","response":"Total outstanding credit ni check chesthanu."}
 {"text":"Suresh udhaar clear chesada?","intent":"credit_payment_status","customer":"Suresh","response":"Suresh credit payment status ni check chesthanu."}
 {"text":"Sita entha pay chesindi?","intent":"credit_payment_query","customer":"Sita","response":"Sita payment details ni check chesthanu."}
+{"text":"ivala profit entha?","intent":"profit_query","time":"today","response":"Ivala profit ni calculate chesthanu."}
+{"text":"ee month profit entha?","intent":"profit_query","time":"this_month","response":"This month's profit ni check chesthanu."}
+{"text":"ivala expenses entha?","intent":"expense_query","time":"today","response":"Ivala expenses total ni check chesthanu."}
+{"text":"ee month expenses entha?","intent":"expense_query","time":"this_month","response":"This month's expenses ni check chesthanu."}
+{"text":"rent expense entha?","intent":"expense_query","expense_type":"rent","response":"Rent expense details ni check chesthanu."}
+{"text":"electricity bill entha vachindi?","intent":"expense_query","expense_type":"electricity","response":"Electricity expense ni check chesthanu."}
+{"text":"transport expense entha?","intent":"expense_query","expense_type":"transport","response":"Transport expenses ni check chesthanu."}
+{"text":"total expenses cheppu","intent":"expense_query","expense_type":"all","response":"Total expenses ni check chesthanu."}

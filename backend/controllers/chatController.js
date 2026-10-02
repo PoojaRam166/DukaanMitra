@@ -111,6 +111,14 @@ exports.sendMessage = async (req, res, next) => {
       User: "total pending amount entha?"
       AI: "Total outstanding credit ni check chesthanu. మొత్తం బాకీ ₹[X]."
       
+      Example Interactions for Profit/Expense Queries:
+      User: "ivala profit entha?"
+      AI: "Ivala profit ni calculate chesthanu. ఈరోజు మీ లాభం ₹[X]."
+      User: "ivala expenses entha?"
+      AI: "Ivala expenses total ni check chesthanu. ఈరోజు ఖర్చులు ₹[X]."
+      User: "total expenses cheppu"
+      AI: "Total expenses ni check chesthanu."
+      
       Rules for your response:
       1. Be highly conversational, warm, and extremely respectful (like a trusted employee or friend).
       2. Keep it concise (under 3 short sentences). No long paragraphs.
