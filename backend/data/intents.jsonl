@@ -1,0 +1,10 @@
+{"text":"rice stock entha undi?","intent":"stock_query","product":"rice","response":"Rice stock quantity check chesthanu."}
+{"text":"rice undha shop lo?","intent":"stock_query","product":"rice","response":"Rice available stock ni check chesthanu."}
+{"text":"sugar stock entha?","intent":"stock_query","product":"sugar","response":"Sugar current stock ni check chesthanu."}
+{"text":"sugar aipoyinda?","intent":"stock_query","product":"sugar","response":"Sugar stock available undho check chesthanu."}
+{"text":"oil stock takkuva undha?","intent":"low_stock_query","product":"oil","response":"Oil low stock status ni check chesthanu."}
+{"text":"ye products low stock lo unnayi?","intent":"low_stock_query","product":"all","response":"Low-stock products list ni check chesthanu."}
+{"text":"stock takkuva unna items cheppu","intent":"low_stock_query","product":"all","response":"Low-stock items ni identify chesthanu."}
+{"text":"out of stock products enti?","intent":"out_of_stock_query","product":"all","response":"Out-of-stock products list ni check chesthanu."}
+{"text":"emem items stock lo unnayi?","intent":"inventory_query","product":"all","response":"Current inventory ni check chesthanu."}
+{"text":"full inventory chupinchu","intent":"inventory_query","product":"all","response":"Complete inventory details ni chupisthanu."}
