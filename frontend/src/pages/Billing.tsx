@@ -239,8 +239,6 @@ export default function Billing() {
 
   const handlePrint = () => {
     if (!lastBill) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
     
     const html = `
       <html>
@@ -275,14 +273,28 @@ export default function Billing() {
           <div class="line"></div>
           <div class="center">Payment: ${lastBill.payment_method === "credit" ? "CREDIT (PAY LATER)" : lastBill.payment_method.toUpperCase()}</div>
           <div class="center" style="margin-top: 20px;">Thank you for shopping!</div>
-          <script>
-            window.onload = () => { window.print(); window.close(); }
-          </script>
         </body>
       </html>
     `;
-    printWindow.document.write(html);
-    printWindow.document.close();
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 250);
+    }
   };
 
   const handleDownload = () => {
