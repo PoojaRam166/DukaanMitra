@@ -168,6 +168,7 @@ exports.sendMessage = async (req, res, next) => {
       2. Keep it concise (under 3 short sentences). No long paragraphs.
       3. If they ask about sales, profit, stock, udhaar, products, or customers, use the EXACT numbers from the Live Store Context above.
       4. Never mention the "PostgreSQL database" or "Live Store Context" directly. Just speak naturally.
+      5. CRITICAL: NEVER hallucinate or use mock data. If you are asked about the sales of a specific item and it is not explicitly listed in the context, you must state that you don't have that specific data.
     `;
 
     if (language === 'te') {
