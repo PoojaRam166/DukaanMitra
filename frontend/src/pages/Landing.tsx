@@ -92,7 +92,7 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
               ))}
             </div>
             <button className="btn-secondary text-sm py-2 px-4" onClick={() => onNavigate("login")}>{tr("Login", "లాగిన్")}</button>
-            <button className="btn-primary text-sm py-2 px-4" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
+            <button className="btn-secondary text-sm py-2 px-4" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
           </div>
         </div>
         {/* Language switcher on small screens, shown below the main row */}

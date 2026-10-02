@@ -309,12 +309,7 @@ export default function Layout({ children, currentPage, onNavigate }: Props) {
                     >
                       <UserIcon size={15} /> {t("profile")}
                     </button>
-                    <button
-                      onClick={() => { setProfileMenuOpen(false); onNavigate("settings"); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                    >
-                      <Settings size={15} /> {t("settings")}
-                    </button>
+
                     <button
                       onClick={() => { setProfileMenuOpen(false); onNavigate("about"); }}
                       className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"

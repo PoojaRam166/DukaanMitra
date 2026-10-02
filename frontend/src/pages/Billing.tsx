@@ -14,7 +14,7 @@ export default function Billing() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [payment, setPayment] = useState<"cash" | "upi" | "credit">("upi");
+  const [payment, setPayment] = useState<"cash" | "upi" | "credit" | "card">("upi");
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customerName, setCustomerName] = useState("");
   const [success, setSuccess] = useState(false);
@@ -725,19 +725,19 @@ export default function Billing() {
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-2">Payment Method</p>
             <div className="flex flex-wrap gap-2">
-              {(["cash", "upi", "credit"] as const).map((m) => (
+              {(["cash", "upi", "card", "credit"] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setPayment(m)}
-                  className={`flex-1 min-w-[70px] py-2 rounded-xl text-[11px] font-bold uppercase tracking-wide border transition-all ${
+                  className={`flex-1 min-w-[70px] py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide border transition-all ${
                     payment === m
                       ? m === "credit"
-                        ? "bg-amber-500 text-white border-amber-500"
-                        : "bg-[#3B5BDB] text-white border-[#3B5BDB]"
-                      : "border-[#E4E7EC] text-gray-500 hover:border-[#3B5BDB]/40"
+                        ? "bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/30 -translate-y-px"
+                        : "bg-[#3B5BDB] text-white border-[#3B5BDB] shadow-md shadow-[#3B5BDB]/40 -translate-y-px"
+                      : "border-[#E4E7EC] text-gray-500 hover:border-[#3B5BDB]/40 hover:text-[#3B5BDB]"
                   }`}
                 >
-                  {m === "upi" ? "UPI" : m === "credit" ? "Credit" : m}
+                  {m === "upi" ? "UPI" : m === "credit" ? "Credit" : m === "card" ? "Card" : "Cash"}
                 </button>
               ))}
             </div>
