@@ -14,7 +14,7 @@ export default function Billing() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [payment, setPayment] = useState<"cash" | "upi" | "phonepe" | "gpay" | "paytm" | "card" | "credit">("upi");
+  const [payment, setPayment] = useState<"cash" | "upi" | "credit">("upi");
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customerName, setCustomerName] = useState("");
   const [success, setSuccess] = useState(false);
@@ -725,7 +725,7 @@ export default function Billing() {
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-2">Payment Method</p>
             <div className="flex flex-wrap gap-2">
-              {(["cash", "upi", "phonepe", "gpay", "paytm", "card", "credit"] as const).map((m) => (
+              {(["cash", "upi", "credit"] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setPayment(m)}
@@ -737,13 +737,13 @@ export default function Billing() {
                       : "border-[#E4E7EC] text-gray-500 hover:border-[#3B5BDB]/40"
                   }`}
                 >
-                  {m === "phonepe" ? "PhonePe" : m === "gpay" ? "GPay" : m === "paytm" ? "Paytm" : m === "upi" ? "UPI" : m === "credit" ? "Credit" : m}
+                  {m === "upi" ? "UPI" : m === "credit" ? "Credit" : m}
                 </button>
               ))}
             </div>
           </div>
 
-          {["upi", "phonepe", "gpay", "paytm"].includes(payment) && total > 0 && (
+          {payment === "upi" && total > 0 && (
             (!shopUpiId || shopUpiId === "shopowner@upi" || shopUpiId === "") ? (
               <div className="mt-2 p-3 border border-[#E4E7EC] rounded-xl flex flex-col bg-[#F9FAFB] fade-in">
                 <div className="text-sm font-semibold text-[#1E2A3B] mb-1">Set Up UPI Payment</div>
