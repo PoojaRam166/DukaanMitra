@@ -45,7 +45,7 @@ exports.sendMessage = async (req, res, next) => {
     const [customersRes, productsRes, creditNamesRes, lowStockRes, expensesRes, topProductsRes, topCustomersRes] = await Promise.all([
       db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 100', [req.user.id]),
       db.query('SELECT name, stock FROM products WHERE user_id = $1 LIMIT 500', [req.user.id]),
-      db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 50`, [req.user.id]),
+      db.query(`SELECT c.name, SUM(b.total - b.amount_paid) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name HAVING SUM(b.total - b.amount_paid) > 0 LIMIT 50`, [req.user.id]),
       db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 50`, [req.user.id]),
       db.query(`SELECT category, amount, date FROM expenses WHERE user_id = $1 ORDER BY date DESC LIMIT 15`, [req.user.id]),
       db.query(`
@@ -192,7 +192,7 @@ exports.sendMessage = async (req, res, next) => {
           (SELECT COALESCE(SUM(amount), 0) FROM e WHERE date = (DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day'))::DATE) AS exp_yesterday,
           (SELECT COALESCE(SUM(amount), 0) FROM e WHERE date >= ((NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days')::DATE) AS exp_week,
           (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items,
-          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'credit') AS total_credit,
+          (SELECT COALESCE(SUM(total - amount_paid), 0) FROM b WHERE payment_method = 'credit') AS total_credit,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'cash') AS total_cash,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method IN ('upi', 'phonepe', 'gpay', 'paytm')) AS total_upi,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'card') AS total_card
@@ -200,7 +200,7 @@ exports.sendMessage = async (req, res, next) => {
       fbStats = statsRes.rows[0];
       
       const [cRes, pRes, lRes, tcRes] = await Promise.all([
-        db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 20`, [req.user.id]),
+        db.query(`SELECT c.name, SUM(b.total - b.amount_paid) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name HAVING SUM(b.total - b.amount_paid) > 0 LIMIT 20`, [req.user.id]),
         db.query(`SELECT name, stock FROM products WHERE user_id = $1 LIMIT 100`, [req.user.id]),
         db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id]),
         db.query(`SELECT c.name, SUM(b.total) as total_spent FROM customers c JOIN bills b ON c.id = b.customer_id WHERE b.user_id = $1 GROUP BY c.id, c.name ORDER BY total_spent DESC LIMIT 10`, [req.user.id])
