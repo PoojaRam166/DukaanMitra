@@ -8,3 +8,15 @@
 {"text":"out of stock products enti?","intent":"out_of_stock_query","product":"all","response":"Out-of-stock products list ni check chesthanu."}
 {"text":"emem items stock lo unnayi?","intent":"inventory_query","product":"all","response":"Current inventory ni check chesthanu."}
 {"text":"full inventory chupinchu","intent":"inventory_query","product":"all","response":"Complete inventory details ni chupisthanu."}
+{"text":"ivala sales entha?","intent":"sales_query","time":"today","response":"Ivala sales total ni check chesthanu."}
+{"text":"aaj sales entha ayyayi?","intent":"sales_query","time":"today","response":"Today's total sales ni check chesthanu."}
+{"text":"today business entha?","intent":"sales_query","time":"today","response":"Ivala business total ni check chesthanu."}
+{"text":"eeroju entha ammam?","intent":"sales_query","time":"today","response":"Ivala sales amount ni check chesthanu."}
+{"text":"ninna sales entha?","intent":"sales_query","time":"yesterday","response":"Ninna sales total ni check chesthanu."}
+{"text":"ee week sales entha?","intent":"sales_query","time":"this_week","response":"This week's sales ni check chesthanu."}
+{"text":"ee month sales entha?","intent":"sales_query","time":"this_month","response":"This month's sales ni check chesthanu."}
+{"text":"rice sales entha?","intent":"product_sales_query","product":"rice","response":"Rice sales details ni check chesthanu."}
+{"text":"oil entha ammudindi?","intent":"product_sales_query","product":"oil","response":"Oil sales quantity ni check chesthanu."}
+{"text":"ekkuva sales ye product ki vachayi?","intent":"best_selling_query","product":"all","response":"Best-selling products ni check chesthanu."}
+{"text":"best selling product enti?","intent":"best_selling_query","product":"all","response":"Best-selling product ni check chesthanu."}
+{"text":"slow ga ammudutunna products enti?","intent":"slow_selling_query","product":"all","response":"Slow-moving products ni check chesthanu."}
