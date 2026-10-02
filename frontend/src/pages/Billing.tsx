@@ -352,8 +352,8 @@ export default function Billing() {
   if (success && lastBill) {
     return (
       <div className="h-full flex flex-col fade-in bg-[#F7F8FA]">
-        <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-[#E4E7EC] p-8 md:p-10 max-w-md w-full text-center shadow-lg">
+        <div className="flex-1 p-4 sm:p-6 pb-32 md:pb-6 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-[#E4E7EC] p-6 md:p-10 max-w-md w-full mx-auto text-center shadow-lg mt-2 sm:mt-8 mb-8">
           <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${lastBill.payment_method === "credit" ? "bg-amber-100" : "bg-[#DCFCE7]"}`}>
             {lastBill.payment_method === "credit" ? <Clock size={32} className="text-amber-600" /> : <CheckCircle size={32} className="text-green-600" />}
           </div>
