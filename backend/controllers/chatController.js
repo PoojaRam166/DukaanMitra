@@ -42,12 +42,22 @@ exports.sendMessage = async (req, res, next) => {
     
     let stats = statsRes.rows[0] || {};
 
-    const [customersRes, productsRes, creditNamesRes, lowStockRes, expensesRes] = await Promise.all([
-      db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 10', [req.user.id]),
-      db.query('SELECT name, stock FROM products WHERE user_id = $1 LIMIT 100', [req.user.id]),
-      db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 20`, [req.user.id]),
-      db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id]),
-      db.query(`SELECT category, amount, date FROM expenses WHERE user_id = $1 ORDER BY date DESC LIMIT 15`, [req.user.id])
+    const [customersRes, productsRes, creditNamesRes, lowStockRes, expensesRes, topProductsRes] = await Promise.all([
+      db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 100', [req.user.id]),
+      db.query('SELECT name, stock FROM products WHERE user_id = $1 LIMIT 500', [req.user.id]),
+      db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 50`, [req.user.id]),
+      db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 50`, [req.user.id]),
+      db.query(`SELECT category, amount, date FROM expenses WHERE user_id = $1 ORDER BY date DESC LIMIT 15`, [req.user.id]),
+      db.query(`
+        SELECT p.name, SUM(bi.quantity) as qty_sold 
+        FROM bill_items bi 
+        JOIN bills b ON b.id = bi.bill_id 
+        JOIN products p ON p.id = bi.product_id 
+        WHERE b.user_id = $1 
+        GROUP BY p.id, p.name 
+        ORDER BY qty_sold DESC 
+        LIMIT 10
+      `, [req.user.id])
     ]);
 
     const customerNames = customersRes.rows.map(r => r.name).join(', ');
@@ -55,6 +65,7 @@ exports.sendMessage = async (req, res, next) => {
     const creditNames = creditNamesRes.rows.map(r => `${r.name} (₹${r.owed})`).join(', ');
     const lowStockNames = lowStockRes.rows.map(r => `${r.name} (${r.stock} left)`).join(', ');
     const recentExpenses = expensesRes.rows.map(r => `${r.category}: ₹${r.amount}`).join(', ');
+    const topProducts = topProductsRes.rows.map(r => `${r.name} (${r.qty_sold} sold)`).join(', ');
 
     let prompt = `
       You are DukaanMitra AI, an incredibly smart, respectful, and helpful virtual assistant for an Indian Kirana (grocery) store owner.
@@ -70,9 +81,10 @@ exports.sendMessage = async (req, res, next) => {
       - Customers Owe Credit: ${creditNames || 'None'}
       - Items Running Out of Stock: ${stats.low_stock_items} items (${lowStockNames || 'None'})
       - Total Distinct Products: ${stats.total_products}
+      - Top Best-Selling Products: ${topProducts || 'None yet'}
       - Total Registered Customers: ${stats.total_customers}
-      - Some Registered Customers: ${customerNames || 'None yet'}
-      - Some Inventory Products: ${productNames || 'None yet'}
+      - All Registered Customers: ${customerNames || 'None yet'}
+      - All Inventory Products (Real Data): ${productNames || 'None yet'}
       
       The store owner just asked you: "${message}"
       
