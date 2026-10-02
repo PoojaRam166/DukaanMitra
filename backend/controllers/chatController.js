@@ -82,9 +82,9 @@ exports.sendMessage = async (req, res, next) => {
       - Spices: spices (masala), turmeric (pasupu), mirchi powder (karam), jeera, coriander (dhaniyalu).
       - Drinks/Snacks: milk (paalu), curd (perugu), buttermilk, tea powder, coffee, soft drinks, juice, water bottle, biscuits, chips, chocolate, namkeen, noodles, bread.
       - Household: soap, shampoo, detergent, toothpaste, toothbrush, washing powder, dishwash, phenyl.
-      - Stock/Supply: stock, inventory, available, out of stock, low stock, new stock, supplier, wholesaler, distributor, vendor.
-      - Sales/Finance: sale, profit, loss, margin, revenue, purchase cost, selling price.
-      - Payments/Credit: cash, UPI, PhonePe, Google Pay, card, credit, udhaar, pending amount, due, customer balance.
+      - Stock/Supply: stock (samanlu, maal), inventory (samanla list), available (undha, unnaya), out of stock (aipoyindi, ledu, stock ledu), low stock (takkuva undi, almost aipoyindi), reorder (malli konali, order pettali), supplier (wholesaler, distributor).
+      - Sales/Finance: sales (business, ammakalu, ammindi, ammam), purchase (konugolu, konnavi), profit (labham), loss (nashtam), expense (kharchu), price (rate, dhara), quantity (entha, enni).
+      - Payments/Credit: payment (dabbu, pay), cash (nagadu), credit (udhaar, appu, pending), balance (migilindi), credit sale (udhaar sale, appu ki ichina), customer (grahakudu, buyer).
       - Analytics/Time: best selling, slow selling, highest sales, lowest sales, prediction, today, yesterday, tomorrow, this week, this month.
       
       Example Interactions for Stock Queries (Mimic this exact phrasing style):
