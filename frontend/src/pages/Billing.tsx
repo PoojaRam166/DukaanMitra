@@ -406,10 +406,10 @@ export default function Billing() {
             </div>
           )}
 
-          <div className="flex gap-2">
-            <button onClick={handlePrint} className="btn-secondary flex-1 justify-center text-xs py-2"><Printer size={13} /> Print</button>
-            <button onClick={handleDownload} className="btn-secondary flex-1 justify-center text-xs py-2"><Download size={13} /> Download</button>
-            <button onClick={handleWhatsAppShare} className="btn-secondary flex-1 justify-center text-xs py-2" style={{ color: '#25D366' }}><Share2 size={13} /> WhatsApp</button>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={handlePrint} className="btn-secondary justify-center text-xs py-2"><Printer size={13} /> Print</button>
+            <button onClick={handleDownload} className="btn-secondary justify-center text-xs py-2"><Download size={13} /> Download</button>
+            <button onClick={handleWhatsAppShare} className="btn-secondary col-span-2 justify-center text-sm py-2.5 font-medium mt-1" style={{ color: '#25D366', borderColor: '#25D366', backgroundColor: '#f0fdf4' }}><Share2 size={15} /> Share on WhatsApp</button>
           </div>
           <button
             className="btn-primary w-full justify-center mt-3"
@@ -705,8 +705,8 @@ export default function Billing() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500 flex-1">Discount</span>
             <div className="relative flex w-32 items-center">
-              <input type="number" min="0" max="100" className="input-field text-sm py-1.5 w-full text-right pr-2 rounded-r-none border-r-0 focus:z-10" value={discount === 0 ? '' : discount} placeholder="0" onChange={(e) => { const v = parseInt(e.target.value); setDiscount(isNaN(v) ? 0 : Math.min(100, Math.max(0, v))); }} />
-              <div className="flex items-center justify-center w-8 h-[34px] bg-[#F9FAFB] border border-[#E4E7EC] rounded-r-lg text-xs font-semibold text-gray-500">%</div>
+              <input type="number" min="0" max="100" className="input-field text-sm py-1.5 w-full text-center !px-2 rounded-r-none border-r-0 focus:z-10" value={discount === 0 ? '' : discount} placeholder="0" onChange={(e) => { const v = parseInt(e.target.value); setDiscount(isNaN(v) ? 0 : Math.min(100, Math.max(0, v))); }} />
+              <div className="flex items-center justify-center w-8 h-[34px] bg-[#F9FAFB] border border-l-0 border-[#E4E7EC] rounded-r-lg text-xs font-semibold text-gray-500">%</div>
             </div>
             <span className="text-sm font-bold text-red-500 w-20 text-right">-₹{discountAmt || 0}</span>
           </div>
