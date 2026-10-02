@@ -77,7 +77,7 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
             <a onClick={() => document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-[#3B5BDB] cursor-pointer transition-colors">{tr("Benefits", "ప్రయోజనాలు")}</a>
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
             {/* Language switcher: English / Telugu / Telugu+English (default) */}
             <div className="hidden sm:flex items-center bg-[#F3F4F6] rounded-lg p-0.5" role="group" aria-label="Language">
               {langOptions.map((opt) => (
@@ -91,12 +91,12 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
                 </button>
               ))}
             </div>
-            <button className="btn-secondary text-sm py-2 px-3 sm:px-4 whitespace-nowrap" onClick={() => onNavigate("login")}>{tr("Login", "లాగిన్")}</button>
-            <button className="hidden sm:inline-flex btn-secondary text-sm py-2 px-4 whitespace-nowrap" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
+            <button className="btn-secondary text-xs sm:text-sm py-1.5 sm:py-2 px-2.5 sm:px-4 whitespace-nowrap" onClick={() => onNavigate("login")}>{tr("Login", "లాగిన్")}</button>
+            <button className="btn-secondary text-xs sm:text-sm py-1.5 sm:py-2 px-2.5 sm:px-4 whitespace-nowrap" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
           </div>
         </div>
-        {/* Language switcher + Get Started on small screens */}
-        <div className="sm:hidden flex items-center justify-center gap-1 pb-2 px-4">
+        {/* Language switcher on small screens */}
+        <div className="sm:hidden flex items-center justify-center gap-1 pb-2">
           {langOptions.map((opt) => (
             <button
               key={opt.id}
@@ -107,12 +107,6 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
               {opt.label}
             </button>
           ))}
-          <button
-            className="ml-auto text-xs font-bold text-[#3B5BDB] whitespace-nowrap px-2 py-1 rounded-md hover:bg-[#EEF2FF] transition-colors"
-            onClick={() => onNavigate("register")}
-          >
-            {tr("Get Started →", "ప్రారంభించండి →")}
-          </button>
         </div>
       </nav>
 
