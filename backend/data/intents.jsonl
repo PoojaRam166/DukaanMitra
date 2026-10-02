@@ -46,3 +46,9 @@
 {"text":"biscuits unnaya?","intent":"product_availability","product":"biscuits","response":"Biscuits availability ni check chesthanu."}
 {"text":"soap stock undha?","intent":"product_availability","product":"soap","response":"Soap availability ni check chesthanu."}
 {"text":"detergent undha?","intent":"product_availability","product":"detergent","response":"Detergent availability ni check chesthanu."}
+{"text":"emem products reorder cheyyali?","intent":"reorder_query","product":"all","response":"Reorder cheyyalsina products ni identify chesthanu."}
+{"text":"rice order cheyyala?","intent":"reorder_query","product":"rice","response":"Rice stock and sales based on reorder need ni check chesthanu."}
+{"text":"oil reorder cheyyali","intent":"reorder_request","product":"oil","response":"Oil reorder requirement ni record chesthanu."}
+{"text":"sugar stock takkuva undi order pettu","intent":"reorder_request","product":"sugar","response":"Sugar reorder requirement ni record chesthanu."}
+{"text":"supplier nundi em konali?","intent":"purchase_recommendation","product":"all","response":"Current stock based on purchase requirements ni check chesthanu."}
+{"text":"next purchase list cheppu","intent":"purchase_list_query","product":"all","response":"Next purchase list ni prepare chesthanu."}

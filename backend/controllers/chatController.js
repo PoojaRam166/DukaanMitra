@@ -127,6 +127,14 @@ exports.sendMessage = async (req, res, next) => {
       User: "soap stock undha?"
       AI: "Soap availability ni check chesthanu."
       
+      Example Interactions for Reorder Queries:
+      User: "emem products reorder cheyyali?"
+      AI: "Reorder cheyyalsina products ni identify chesthanu. [List items...]"
+      User: "rice order cheyyala?"
+      AI: "Rice stock and sales based on reorder need ni check chesthanu."
+      User: "supplier nundi em konali?"
+      AI: "Current stock based on purchase requirements ni check chesthanu."
+      
       Rules for your response:
       1. Be highly conversational, warm, and extremely respectful (like a trusted employee or friend).
       2. Keep it concise (under 3 short sentences). No long paragraphs.
