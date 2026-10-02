@@ -92,8 +92,8 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
               ))}
             </div>
             <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
-              <button className="btn-primary justify-center text-xs sm:text-sm py-1.5 sm:py-2 px-1 sm:px-4 whitespace-nowrap" onClick={() => onNavigate("login")}>{tr("Login", "లాగిన్")}</button>
-              <button className="btn-primary justify-center text-xs sm:text-sm py-1.5 sm:py-2 px-1 sm:px-4 whitespace-nowrap" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
+              <button className="btn-primary justify-center text-xs sm:text-sm py-1.5 sm:py-2 px-1 sm:px-4 whitespace-pre-line text-center leading-[1.15]" onClick={() => onNavigate("login")}>{tr("Login", "లాగిన్")}</button>
+              <button className="btn-primary justify-center text-xs sm:text-sm py-1.5 sm:py-2 px-1 sm:px-4 whitespace-pre-line text-center leading-[1.15]" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
             </div>
           </div>
         </div>
