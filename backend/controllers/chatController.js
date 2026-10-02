@@ -42,7 +42,7 @@ exports.sendMessage = async (req, res, next) => {
     
     let stats = statsRes.rows[0] || {};
 
-    const [customersRes, productsRes, creditNamesRes, lowStockRes, expensesRes, topProductsRes] = await Promise.all([
+    const [customersRes, productsRes, creditNamesRes, lowStockRes, expensesRes, topProductsRes, topCustomersRes] = await Promise.all([
       db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 100', [req.user.id]),
       db.query('SELECT name, stock FROM products WHERE user_id = $1 LIMIT 500', [req.user.id]),
       db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 50`, [req.user.id]),
@@ -57,6 +57,15 @@ exports.sendMessage = async (req, res, next) => {
         GROUP BY p.id, p.name 
         ORDER BY qty_sold DESC 
         LIMIT 10
+      `, [req.user.id]),
+      db.query(`
+        SELECT c.name, COUNT(b.id) as visit_count, SUM(b.total) as total_spent 
+        FROM customers c 
+        JOIN bills b ON c.id = b.customer_id 
+        WHERE b.user_id = $1 
+        GROUP BY c.id, c.name 
+        ORDER BY total_spent DESC 
+        LIMIT 10
       `, [req.user.id])
     ]);
 
@@ -66,6 +75,7 @@ exports.sendMessage = async (req, res, next) => {
     const lowStockNames = lowStockRes.rows.map(r => `${r.name} (${r.stock} left)`).join(', ');
     const recentExpenses = expensesRes.rows.map(r => `${r.category}: ₹${r.amount}`).join(', ');
     const topProducts = topProductsRes.rows.map(r => `${r.name} (${r.qty_sold} sold)`).join(', ');
+    const topCustomers = topCustomersRes.rows.map(r => `${r.name} (₹${r.total_spent} spent)`).join(', ');
 
     let prompt = `
       You are DukaanMitra AI, an incredibly smart, respectful, and helpful virtual assistant for an Indian Kirana (grocery) store owner.
@@ -82,6 +92,7 @@ exports.sendMessage = async (req, res, next) => {
       - Items Running Out of Stock: ${stats.low_stock_items} items (${lowStockNames || 'None'})
       - Total Distinct Products: ${stats.total_products}
       - Top Best-Selling Products: ${topProducts || 'None yet'}
+      - Top Regular Customers (By Spend): ${topCustomers || 'None yet'}
       - Total Registered Customers: ${stats.total_customers}
       - All Registered Customers: ${customerNames || 'None yet'}
       - All Inventory Products (Real Data): ${productNames || 'None yet'}
@@ -188,17 +199,22 @@ exports.sendMessage = async (req, res, next) => {
       `, [req.user.id]);
       fbStats = statsRes.rows[0];
       
-      const [cRes, pRes, lRes] = await Promise.all([
+      const [cRes, pRes, lRes, tcRes] = await Promise.all([
         db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 20`, [req.user.id]),
         db.query(`SELECT name, stock FROM products WHERE user_id = $1 LIMIT 100`, [req.user.id]),
-        db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id])
+        db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id]),
+        db.query(`SELECT c.name, SUM(b.total) as total_spent FROM customers c JOIN bills b ON c.id = b.customer_id WHERE b.user_id = $1 GROUP BY c.id, c.name ORDER BY total_spent DESC LIMIT 10`, [req.user.id])
       ]);
       cResRows = cRes.rows;
       pResRows = pRes.rows;
       cNames = cRes.rows.map(r => `${r.name} (₹${r.owed})`).join(', ');
       pNames = pRes.rows.map(r => `${r.name} (${r.stock})`).join(', ');
       lsNames = lRes.rows.map(r => `${r.name} (${r.stock})`).join(', ');
-    } catch(e) {}
+      let tcNames = tcRes.rows.map(r => `${r.name} (₹${r.total_spent} spent)`).join(', ');
+      globalTcNames = tcNames; // Save for fallback logic use
+    } catch(e) {
+      globalTcNames = '';
+    }
 
     let enResponse = `Based on your store data, your total all-time sales are ₹${fbStats.total_sales}. Keep up the great work!`;
     let teResponse = `మీ స్టోర్ డేటా ఆధారంగా, మీ మొత్తం విక్రయాలు ₹${fbStats.total_sales}. ఇలాగే మంచి పనిని కొనసాగించండి!`;
@@ -232,9 +248,9 @@ exports.sendMessage = async (req, res, next) => {
         teResponse = `మీరు ${mentionedCustomer.name} గురించి అడిగారు. వారు మీకు ₹${mentionedCustomer.owed} బాకీ ఉన్నారు.`;
         biResponse = `మీరు ${mentionedCustomer.name} గురించి అడిగారు. వారికి ₹${mentionedCustomer.owed} pending ఉంది.`;
       } else {
-        enResponse = `Your regular customers include: ${cNames || 'No registered customers yet'}.`;
-        teResponse = `మీ రెగ్యులర్ కస్టమర్లు: ${cNames || 'ఇంకా ఎవరూ లేరు'}.`;
-        biResponse = `మీ regular customers list: ${cNames || 'No customers yet'}.`;
+        enResponse = `Your regular top customers include: ${globalTcNames || 'No registered customers yet'}.`;
+        teResponse = `మీ రెగ్యులర్ టాప్ కస్టమర్లు: ${globalTcNames || 'ఇంకా ఎవరూ లేరు'}.`;
+        biResponse = `మీ regular top customers list: ${globalTcNames || 'No customers yet'}.`;
       }
     
     // 2. Expenses Logic
