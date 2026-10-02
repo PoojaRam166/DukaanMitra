@@ -214,7 +214,7 @@ exports.sendMessage = async (req, res, next) => {
       mentionedProduct = pResRows.find(p => p.name && msgLower.includes(p.name.toLowerCase()));
     }
     
-    if (msgLower.includes('udhar') || msgLower.includes('udhaar') || msgLower.includes('credit') || msgLower.includes('pending') || msgLower.includes('అప్పు') || msgLower.includes('బాకీ') || msgLower.includes('katha') || msgLower.includes('customer') || msgLower.includes('balance') || msgLower.includes('ivvali') || msgLower.includes('due') || mentionedCustomer) {
+    if (msgLower.includes('udhar') || msgLower.includes('udhaar') || msgLower.includes('credit') || msgLower.includes('pending') || msgLower.includes('అప్పు') || msgLower.includes('బాకీ') || msgLower.includes('katha') || msgLower.includes('balance') || msgLower.includes('ivvali') || msgLower.includes('due')) {
       if (mentionedCustomer) {
         enResponse = `${mentionedCustomer.name} owes you ₹${mentionedCustomer.owed}.`;
         teResponse = `${mentionedCustomer.name} మీకు ₹${mentionedCustomer.owed} బాకీ ఉన్నారు.`;
@@ -223,6 +223,18 @@ exports.sendMessage = async (req, res, next) => {
         enResponse = `You have a total of ₹${fbStats.total_credit} in pending credit/udhaar. ${cNames ? `Customers who owe you include: ${cNames}.` : 'No customers currently owe you.'}`;
         teResponse = `మీకు మొత్తం ₹${fbStats.total_credit} అప్పు/బాకీ పెండింగ్‌లో ఉంది. ${cNames ? `మీకు అప్పు ఉన్న కస్టమర్లు: ${cNames}.` : 'ప్రస్తుతం మీకు ఎవరూ అప్పు లేరు.'}`;
         biResponse = `మీకు total ₹${fbStats.total_credit} credit/udhaar pending లో ఉంది. ${cNames ? `మీకు pending ఉన్న customers: ${cNames}.` : 'ప్రస్తుతం customers ఎవరూ credit లో లేరు.'}`;
+      }
+      
+    // 1b. Customer List logic
+    } else if (msgLower.includes('customer') || msgLower.includes('regular') || mentionedCustomer) {
+      if (mentionedCustomer) {
+        enResponse = `You asked about ${mentionedCustomer.name}. They currently owe you ₹${mentionedCustomer.owed}.`;
+        teResponse = `మీరు ${mentionedCustomer.name} గురించి అడిగారు. వారు మీకు ₹${mentionedCustomer.owed} బాకీ ఉన్నారు.`;
+        biResponse = `మీరు ${mentionedCustomer.name} గురించి అడిగారు. వారికి ₹${mentionedCustomer.owed} pending ఉంది.`;
+      } else {
+        enResponse = `Your regular customers include: ${cNames || 'No registered customers yet'}.`;
+        teResponse = `మీ రెగ్యులర్ కస్టమర్లు: ${cNames || 'ఇంకా ఎవరూ లేరు'}.`;
+        biResponse = `మీ regular customers list: ${cNames || 'No customers yet'}.`;
       }
     
     // 2. Expenses Logic
