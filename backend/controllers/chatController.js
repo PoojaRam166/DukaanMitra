@@ -4,7 +4,7 @@ const db = require('../config/db');
 exports.sendMessage = async (req, res, next) => {
   try {
     const { message, language } = req.body;
-    
+
     if (!process.env.GROQ_API_KEY) {
       // Just a check to log if we want, but we don't return here anymore, 
       // we let it fall through to the fallback at the bottom.
@@ -39,13 +39,13 @@ exports.sendMessage = async (req, res, next) => {
         (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE payment_method IN ('upi', 'phonepe', 'gpay', 'paytm')) AS total_upi,
         (SELECT COALESCE(SUM(total), 0) FROM user_bills WHERE payment_method = 'card') AS total_card
     `, [req.user.id]);
-    
+
     let stats = statsRes.rows[0] || {};
 
     const [customersRes, productsRes, creditNamesRes, lowStockRes, expensesRes, topProductsRes, topCustomersRes] = await Promise.all([
       db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 100', [req.user.id]),
       db.query('SELECT name, stock FROM products WHERE user_id = $1 LIMIT 500', [req.user.id]),
-      db.query(`SELECT c.name, SUM(b.total - b.amount_paid) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name HAVING SUM(b.total - b.amount_paid) > 0 LIMIT 50`, [req.user.id]),
+      db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 50`, [req.user.id]),
       db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 50`, [req.user.id]),
       db.query(`SELECT category, amount, date FROM expenses WHERE user_id = $1 ORDER BY date DESC LIMIT 15`, [req.user.id]),
       db.query(`
@@ -168,7 +168,7 @@ exports.sendMessage = async (req, res, next) => {
     console.error("Chat API Error:", error.message);
     const { language, message: userMsg } = req.body;
     const msgLower = (userMsg || '').toLowerCase();
-    
+
     // Fallback if stats were not fetched properly
     // (If the error was Groq, we actually lost access to the block scoped `stats` variables here.
     // Ideally they should be declared outside `try`, but for now we'll just query them again or use 0s if DB fails)
@@ -176,7 +176,7 @@ exports.sendMessage = async (req, res, next) => {
     let pNames = '', cNames = '', lsNames = '';
     let cResRows = [];
     let pResRows = [];
-    
+
     try {
       const statsRes = await db.query(`
         WITH b AS (SELECT * FROM bills WHERE user_id = $1), e AS (SELECT * FROM expenses WHERE user_id = $1)
@@ -192,15 +192,15 @@ exports.sendMessage = async (req, res, next) => {
           (SELECT COALESCE(SUM(amount), 0) FROM e WHERE date = (DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day'))::DATE) AS exp_yesterday,
           (SELECT COALESCE(SUM(amount), 0) FROM e WHERE date >= ((NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days')::DATE) AS exp_week,
           (SELECT COUNT(*) FROM products WHERE user_id = $1 AND stock <= min_stock) AS low_stock_items,
-          (SELECT COALESCE(SUM(total - amount_paid), 0) FROM b WHERE payment_method = 'credit') AS total_credit,
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'credit') AS total_credit,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'cash') AS total_cash,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method IN ('upi', 'phonepe', 'gpay', 'paytm')) AS total_upi,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'card') AS total_card
       `, [req.user.id]);
       fbStats = statsRes.rows[0];
-      
+
       const [cRes, pRes, lRes, tcRes] = await Promise.all([
-        db.query(`SELECT c.name, SUM(b.total - b.amount_paid) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name HAVING SUM(b.total - b.amount_paid) > 0 LIMIT 20`, [req.user.id]),
+        db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 20`, [req.user.id]),
         db.query(`SELECT name, stock FROM products WHERE user_id = $1 LIMIT 100`, [req.user.id]),
         db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id]),
         db.query(`SELECT c.name, SUM(b.total) as total_spent FROM customers c JOIN bills b ON c.id = b.customer_id WHERE b.user_id = $1 GROUP BY c.id, c.name ORDER BY total_spent DESC LIMIT 10`, [req.user.id])
@@ -212,7 +212,7 @@ exports.sendMessage = async (req, res, next) => {
       lsNames = lRes.rows.map(r => `${r.name} (${r.stock})`).join(', ');
       let tcNames = tcRes.rows.map(r => `${r.name} (₹${r.total_spent} spent)`).join(', ');
       globalTcNames = tcNames; // Save for fallback logic use
-    } catch(e) {
+    } catch (e) {
       globalTcNames = '';
     }
 
@@ -229,7 +229,7 @@ exports.sendMessage = async (req, res, next) => {
     if (pResRows.length > 0) {
       mentionedProduct = pResRows.find(p => p.name && msgLower.includes(p.name.toLowerCase()));
     }
-    
+
     if (msgLower.includes('udhar') || msgLower.includes('udhaar') || msgLower.includes('credit') || msgLower.includes('pending') || msgLower.includes('అప్పు') || msgLower.includes('బాకీ') || msgLower.includes('katha') || msgLower.includes('balance') || msgLower.includes('ivvali') || msgLower.includes('due')) {
       if (mentionedCustomer) {
         enResponse = `${mentionedCustomer.name} owes you ₹${mentionedCustomer.owed}.`;
@@ -240,8 +240,8 @@ exports.sendMessage = async (req, res, next) => {
         teResponse = `మీకు మొత్తం ₹${fbStats.total_credit} అప్పు/బాకీ పెండింగ్‌లో ఉంది. ${cNames ? `మీకు అప్పు ఉన్న కస్టమర్లు: ${cNames}.` : 'ప్రస్తుతం మీకు ఎవరూ అప్పు లేరు.'}`;
         biResponse = `మీకు total ₹${fbStats.total_credit} credit/udhaar pending లో ఉంది. ${cNames ? `మీకు pending ఉన్న customers: ${cNames}.` : 'ప్రస్తుతం customers ఎవరూ credit లో లేరు.'}`;
       }
-      
-    // 1b. Customer List logic
+
+      // 1b. Customer List logic
     } else if (msgLower.includes('customer') || msgLower.includes('regular') || mentionedCustomer) {
       if (mentionedCustomer) {
         enResponse = `You asked about ${mentionedCustomer.name}. They currently owe you ₹${mentionedCustomer.owed}.`;
@@ -252,8 +252,8 @@ exports.sendMessage = async (req, res, next) => {
         teResponse = `మీ రెగ్యులర్ టాప్ కస్టమర్లు: ${globalTcNames || 'ఇంకా ఎవరూ లేరు'}.`;
         biResponse = `మీ regular top customers list: ${globalTcNames || 'No customers yet'}.`;
       }
-      
-    // 1c. Stock/Product logic
+
+      // 1c. Stock/Product logic
     } else if (msgLower.includes('available') || msgLower.includes('stock') || msgLower.includes('undha') || msgLower.includes('unnaya') || msgLower.includes('ledu') || mentionedProduct) {
       if (mentionedProduct) {
         if (mentionedProduct.stock > 0) {
@@ -270,8 +270,8 @@ exports.sendMessage = async (req, res, next) => {
         teResponse = `మీ ప్రస్తుత ఇన్వెంటరీ ఇక్కడ ఉంది: ${pNames || 'ఇంకా స్టాక్ లేదు'}.`;
         biResponse = `మీ current inventory: ${pNames || 'No items yet'}.`;
       }
-    
-    // 2. Expenses Logic
+
+      // 2. Expenses Logic
     } else if (msgLower.includes('expense') || msgLower.includes('karchu') || msgLower.includes('ఖర్చు') || msgLower.includes('supplier')) {
       if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju') || msgLower.includes('aaj') || msgLower.includes('ivala')) {
         enResponse = `Your expenses for today are ₹${fbStats.exp_today}.`;
@@ -291,7 +291,7 @@ exports.sendMessage = async (req, res, next) => {
         biResponse = `ఈరోజు మీ expenses ₹${fbStats.exp_today} మరియు ఈ week ₹${fbStats.exp_week}.`;
       }
 
-    // 3. Sales Logic (Date ranges)
+      // 3. Sales Logic (Date ranges)
     } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('అమ్మకాలు') || msgLower.includes('ammalu') || msgLower.includes('ammakam') || msgLower.includes('ammudainadi') || msgLower.includes('selling') || msgLower.includes('business') || msgLower.includes('ammam')) {
       if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju') || msgLower.includes('eeroju') || msgLower.includes('aaj') || msgLower.includes('ivala') || msgLower.includes('ivvala')) {
         enResponse = `Your sales for today are ₹${fbStats.sales_today}. Great job!`;
@@ -319,7 +319,7 @@ exports.sendMessage = async (req, res, next) => {
         biResponse = `మీ total sales ₹${fbStats.total_sales} (${fbStats.total_bills} bills నుండి). Keep it up!`;
       }
 
-    // 4. Products / Low Stock Name Listing
+      // 4. Products / Low Stock Name Listing
     } else if ((msgLower.includes('name') || msgLower.includes('what') || msgLower.includes('ఏమిటి') || msgLower.includes('పేరు') || msgLower.includes('ye') || msgLower.includes('e') || msgLower.includes('enti')) && (msgLower.includes('stock') || msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు'))) {
       if (msgLower.includes('low') || msgLower.includes('empty') || msgLower.includes('తక్కువ') || msgLower.includes('takkuva') || msgLower.includes('aipoyina') || msgLower.includes('reorder')) {
         enResponse = `You have ${fbStats.low_stock_items} items low on stock. They are: ${lsNames || 'None'}.`;
@@ -331,7 +331,7 @@ exports.sendMessage = async (req, res, next) => {
         biResponse = `మీ inventory లోని కొన్ని products: ${pNames || 'ఏమీ లేవు'}.`;
       }
 
-    // 5. Generic Low Stock Alert
+      // 5. Generic Low Stock Alert
     } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha') || msgLower.includes('undha') || msgLower.includes('undi') || mentionedProduct) {
       if (mentionedProduct) {
         enResponse = `You have ${mentionedProduct.stock} left of ${mentionedProduct.name}.`;
@@ -343,19 +343,19 @@ exports.sendMessage = async (req, res, next) => {
         biResponse = `ప్రస్తుతం మీ store లో ${fbStats.low_stock_items} items కు low stock ఉంది. వాటిని restock చేయండి!`;
       }
 
-    // 5b. Payment Types
+      // 5b. Payment Types
     } else if (msgLower.includes('payment') || msgLower.includes('cash') || msgLower.includes('upi') || msgLower.includes('card') || msgLower.includes('చెల్లింపు') || msgLower.includes('డబ్బు')) {
       enResponse = `Your payment breakdown is: Cash ₹${fbStats.total_cash}, UPI ₹${fbStats.total_upi}, Card ₹${fbStats.total_card}.`;
       teResponse = `మీ చెల్లింపుల వివరాలు: నగదు ₹${fbStats.total_cash}, UPI ₹${fbStats.total_upi}, కార్డ్ ₹${fbStats.total_card}.`;
       biResponse = `మీ payment వివరాలు: Cash ₹${fbStats.total_cash}, UPI ₹${fbStats.total_upi}, Card ₹${fbStats.total_card}.`;
 
-    // 6. Bills
+      // 6. Bills
     } else if (msgLower.includes('bills') || msgLower.includes('బిల్లులు')) {
       enResponse = `You have generated a total of ${fbStats.total_bills} bills all-time!`;
       teResponse = `మీరు మొత్తంగా ${fbStats.total_bills} బిల్లులను సృష్టించారు!`;
       biResponse = `మీరు total గా ${fbStats.total_bills} bills generate చేసారు!`;
 
-    // 7. Greeting Fallback
+      // 7. Greeting Fallback
     } else if (msgLower.match(/\b(hi|hello|hey|నమస్తే|హలో|namaste|namasthe|namaskaram)\b/)) {
       enResponse = "Hello! How can I help you manage your Kirana store today?";
       teResponse = "నమస్తే! ఈరోజు మీ కిరాణా స్టోర్‌ను నిర్వహించడంలో నేను మీకు ఎలా సహాయపడగలను?";
@@ -372,18 +372,18 @@ exports.parseBilling = async (req, res, next) => {
     let clean = text.toLowerCase();
     const stop = ["to the cart", "in the cart", "to cart", "in cart", "cart lo", "cart ki", "add chey", "add cheyyi", "veyi", "vey", "kottu", "please", "ivvu", "ivandi", "kavali", "add", "bill lo", "esey"];
     for (const p of stop) clean = clean.replace(new RegExp(`\\b${p}\\b`, 'gi'), ' ');
-    
-    const nums = { 'one':1,'oka':1,'okati':1,'two':2,'rendu':2,'three':3,'moodu':3,'four':4,'naalugu':4,'five':5,'aidu':5,'six':6,'aaru':6,'seven':7,'edu':7,'eight':8,'enimidi':8,'nine':9,'tommidi':9,'ten':10,'padi':10 };
+
+    const nums = { 'one': 1, 'oka': 1, 'okati': 1, 'two': 2, 'rendu': 2, 'three': 3, 'moodu': 3, 'four': 4, 'naalugu': 4, 'five': 5, 'aidu': 5, 'six': 6, 'aaru': 6, 'seven': 7, 'edu': 7, 'eight': 8, 'enimidi': 8, 'nine': 9, 'tommidi': 9, 'ten': 10, 'padi': 10 };
     Object.keys(nums).forEach(w => clean = clean.replace(new RegExp(`\\b${w}\\b`, 'gi'), nums[w].toString()));
-    
+
     const qtyMatch = clean.match(/\b(\d+)\b/);
     const quantity = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-    
-    const units = ["add","put","give","me","want","need","packets","packet","kg","kilos","kilo","liters","liter","grams","gram","pockets","pocket","lu","kavalu","kavali","ivi"];
+
+    const units = ["add", "put", "give", "me", "want", "need", "packets", "packet", "kg", "kilos", "kilo", "liters", "liter", "grams", "gram", "pockets", "pocket", "lu", "kavalu", "kavali", "ivi"];
     let product_name = clean.replace(/\b(\d+)\b/g, ' ');
     for (const u of units) product_name = product_name.replace(new RegExp(`\\b${u}\\b`, 'gi'), ' ');
     product_name = product_name.replace(/\s+/g, ' ').trim();
-    
+
     return { product_name, quantity };
   };
 
@@ -415,7 +415,7 @@ exports.parseBilling = async (req, res, next) => {
     });
 
     const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
-    
+
     // Fallback if LLM fails
     if (!result.product_name) {
       return res.json({ success: true, data: fallbackParse(transcript) });

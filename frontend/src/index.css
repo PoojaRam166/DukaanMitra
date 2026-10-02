@@ -20,7 +20,9 @@
   --font-display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -36,24 +38,63 @@ body {
   color: #1E2A3B;
 }
 
-h1, h2, h3, h4, h5, h6, .font-display {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
   font-family: 'Outfit', 'Noto Sans Telugu', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Strong heading weight defaults — ensures headings are bold regardless of Tailwind specificity */
-h1 { font-weight: 800; }
-h2 { font-weight: 800; }
-h3 { font-weight: 700; }
-h4, h5, h6 { font-weight: 600; }
+h1 {
+  font-weight: 800;
+}
+
+h2 {
+  font-weight: 800;
+}
+
+h3 {
+  font-weight: 700;
+}
+
+h4,
+h5,
+h6 {
+  font-weight: 600;
+}
 
 /* Ensure all buttons and links always have a hand pointer in Tailwind */
-button, a[href], a[onClick] { cursor: pointer; }
-button:disabled { cursor: not-allowed; }
+button,
+a[href],
+a[onClick] {
+  cursor: pointer;
+}
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+button:disabled {
+  cursor: not-allowed;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
 
 .sidebar-link {
   display: flex;
@@ -69,9 +110,21 @@ button:disabled { cursor: not-allowed; }
   white-space: nowrap;
   overflow: hidden;
 }
-.sidebar-link:hover { background: rgba(255,255,255,0.08); color: #E2E8F0; }
-.sidebar-link.active { background: #3B5BDB; color: #fff; font-weight: 700; }
-.sidebar-link svg { flex-shrink: 0; }
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #E2E8F0;
+}
+
+.sidebar-link.active {
+  background: #3B5BDB;
+  color: #fff;
+  font-weight: 700;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
+}
 
 .stat-card {
   background: #fff;
@@ -80,7 +133,11 @@ button:disabled { cursor: not-allowed; }
   padding: 20px;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
 
 .btn-primary {
   display: inline-flex;
@@ -96,10 +153,19 @@ button:disabled { cursor: not-allowed; }
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
-  min-height: 44px; /* Mobile friendly touch target */
+  min-height: 44px;
+  /* Mobile friendly touch target */
 }
-.btn-primary:hover { background: #3451C7; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,91,219,0.4); }
-.btn-primary:active { transform: scale(0.98) translateY(0); }
+
+.btn-primary:hover {
+  background: #3451C7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 91, 219, 0.4);
+}
+
+.btn-primary:active {
+  transform: scale(0.98) translateY(0);
+}
 
 .btn-secondary {
   display: inline-flex;
@@ -115,10 +181,20 @@ button:disabled { cursor: not-allowed; }
   border: 1px solid #D1D5DB;
   cursor: pointer;
   transition: all 0.15s ease;
-  min-height: 44px; /* Mobile friendly touch target */
+  min-height: 44px;
+  /* Mobile friendly touch target */
 }
-.btn-secondary:hover { background: #F9FAFB; border-color: #9CA3AF; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-.btn-secondary:active { transform: scale(0.98) translateY(0); }
+
+.btn-secondary:hover {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98) translateY(0);
+}
 
 
 .input-field {
@@ -126,19 +202,34 @@ button:disabled { cursor: not-allowed; }
   padding: 10px 14px;
   border: 1px solid #E4E7EC;
   border-radius: 8px;
-  font-size: 16px; /* Prevents zoom on iOS Safari */
+  font-size: 16px;
+  /* Prevents zoom on iOS Safari */
   font-family: 'Inter', sans-serif;
   color: #1E2A3B;
   background: #fff;
   outline: none;
   transition: border-color 0.15s ease;
-  min-height: 44px; /* Mobile friendly touch target */
+  min-height: 44px;
+  /* Mobile friendly touch target */
 }
-.input-field:focus { border-color: #3B5BDB; box-shadow: 0 0 0 3px rgba(59,91,219,0.1); }
-.input-field::placeholder { color: #9CA3AF; font-size: 14px; }
 
-.table-row { transition: background-color 0.15s ease; }
-.table-row:hover { background: #F3F4F6; }
+.input-field:focus {
+  border-color: #3B5BDB;
+  box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.1);
+}
+
+.input-field::placeholder {
+  color: #9CA3AF;
+  font-size: 14px;
+}
+
+.table-row {
+  transition: background-color 0.15s ease;
+}
+
+.table-row:hover {
+  background: #F3F4F6;
+}
 
 .badge {
   display: inline-flex;
@@ -149,36 +240,93 @@ button:disabled { cursor: not-allowed; }
   font-size: 13px;
   font-weight: 600;
 }
-.badge-success { background: #DCFCE7; color: #16A34A; }
-.badge-warning { background: #FEF3C7; color: #D97706; }
-.badge-danger { background: #FEE2E2; color: #DC2626; }
-.badge-info { background: #EEF2FF; color: #3B5BDB; }
-.badge-gray { background: #F3F4F6; color: #6B7280; }
+
+.badge-success {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+.badge-warning {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.badge-danger {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.badge-info {
+  background: #EEF2FF;
+  color: #3B5BDB;
+}
+
+.badge-gray {
+  background: #F3F4F6;
+  color: #6B7280;
+}
 
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
-.skeleton { background: #E9ECEF; border-radius: 6px; animation: skeleton-pulse 1.5s ease-in-out infinite; }
+
+.skeleton {
+  background: #E9ECEF;
+  border-radius: 6px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.fade-in { animation: fadeIn 0.2s ease-out; }
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
 
 @keyframes slideIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* Gentle glow used on the dashboard's low-stock alert icon — draws the
  * eye without being an obnoxious full-card flash. */
 @keyframes alertGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35); }
-  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+  }
 }
-.alert-glow { animation: alertGlow 2s ease-in-out infinite; }
+
+.alert-glow {
+  animation: alertGlow 2s ease-in-out infinite;
+}
 
 /* Dashboard "Stock needs your attention" card. Uses its own classes
  * (rather than Tailwind's from-red-100/via-red-50/to-orange-100/bg-red-200
@@ -187,19 +335,55 @@ button:disabled { cursor: not-allowed; }
  * its light pastel background while its title text flipped to a light
  * color (via the .text-[#1E2A3B] override below), making the text
  * invisible against the still-light card. */
-.stock-alert-card { background: linear-gradient(to right, #FEE2E2, #FEF6E7); border: 1px solid #FCA5A5; }
-.stock-alert-card:hover { border-color: #F87171; }
-.stock-alert-icon-wrap { background: #FECACA; }
-.stock-alert-icon { color: #B91C1C; }
-.stock-alert-title { color: #1E2A3B; }
-.stock-alert-cta { color: #DC2626; }
+.stock-alert-card {
+  background: linear-gradient(to right, #FEE2E2, #FEF6E7);
+  border: 1px solid #FCA5A5;
+}
 
-.dark .stock-alert-card { background: linear-gradient(to right, rgba(220,38,38,0.16), rgba(217,119,6,0.12)); border: 1px solid rgba(220,38,38,0.5); }
-.dark .stock-alert-card:hover { border-color: rgba(220,38,38,0.75); }
-.dark .stock-alert-icon-wrap { background: rgba(220,38,38,0.3); }
-.dark .stock-alert-icon { color: #FCA5A5; }
-.dark .stock-alert-title { color: #F1F5F9; }
-.dark .stock-alert-cta { color: #FCA5A5; }
+.stock-alert-card:hover {
+  border-color: #F87171;
+}
+
+.stock-alert-icon-wrap {
+  background: #FECACA;
+}
+
+.stock-alert-icon {
+  color: #B91C1C;
+}
+
+.stock-alert-title {
+  color: #1E2A3B;
+}
+
+.stock-alert-cta {
+  color: #DC2626;
+}
+
+.dark .stock-alert-card {
+  background: linear-gradient(to right, rgba(220, 38, 38, 0.16), rgba(217, 119, 6, 0.12));
+  border: 1px solid rgba(220, 38, 38, 0.5);
+}
+
+.dark .stock-alert-card:hover {
+  border-color: rgba(220, 38, 38, 0.75);
+}
+
+.dark .stock-alert-icon-wrap {
+  background: rgba(220, 38, 38, 0.3);
+}
+
+.dark .stock-alert-icon {
+  color: #FCA5A5;
+}
+
+.dark .stock-alert-title {
+  color: #F1F5F9;
+}
+
+.dark .stock-alert-cta {
+  color: #FCA5A5;
+}
 
 /* App-wide low-stock top banner (Layout.tsx). Solid, bright red in light
  * mode so it actually pops against the white/light-gray UI instead of
@@ -207,29 +391,102 @@ button:disabled { cursor: not-allowed; }
  * of the same bright red — a saturated red on the near-black background
  * would be harsh/glary, so it's toned down while staying clearly "red
  * alert" via a bright red border and warm red text. */
-.low-stock-banner { background: #EF4444; border-bottom: 2px solid #B91C1C; }
-.low-stock-banner .lsb-icon,
-.low-stock-banner .lsb-label { color: #fff; }
-.low-stock-chip { background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.4); color: #fff; }
-.low-stock-chip:hover { background: rgba(255,255,255,0.28); }
-.low-stock-chip-urgent { background: #fff; border: 1px solid #fff; color: #B91C1C; }
-.low-stock-chip-urgent:hover { background: #FEE2E2; }
-.low-stock-cta { color: #fff; }
-.low-stock-cta:hover { color: #FEE2E2; }
-.low-stock-dismiss { color: rgba(255,255,255,0.85); }
-.low-stock-dismiss:hover { background: rgba(255,255,255,0.2); color: #fff; }
+.low-stock-banner {
+  background: #EF4444;
+  border-bottom: 2px solid #B91C1C;
+}
 
-.dark .low-stock-banner { background: #3B1212; border-bottom: 2px solid #DC2626; }
-.dark .low-stock-banner .lsb-icon { color: #F87171; }
-.dark .low-stock-banner .lsb-label { color: #FCA5A5; }
-.dark .low-stock-chip { background: rgba(220,38,38,0.12); border: 1px solid rgba(220,38,38,0.5); color: #FCA5A5; }
-.dark .low-stock-chip:hover { background: rgba(220,38,38,0.22); }
-.dark .low-stock-chip-urgent { background: #DC2626; border: 1px solid #DC2626; color: #fff; }
-.dark .low-stock-chip-urgent:hover { background: #B91C1C; }
-.dark .low-stock-cta { color: #F87171; }
-.dark .low-stock-cta:hover { color: #FCA5A5; }
-.dark .low-stock-dismiss { color: rgba(248,113,113,0.75); }
-.dark .low-stock-dismiss:hover { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+.low-stock-banner .lsb-icon,
+.low-stock-banner .lsb-label {
+  color: #fff;
+}
+
+.low-stock-chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.low-stock-chip:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.low-stock-chip-urgent {
+  background: #fff;
+  border: 1px solid #fff;
+  color: #B91C1C;
+}
+
+.low-stock-chip-urgent:hover {
+  background: #FEE2E2;
+}
+
+.low-stock-cta {
+  color: #fff;
+}
+
+.low-stock-cta:hover {
+  color: #FEE2E2;
+}
+
+.low-stock-dismiss {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.low-stock-dismiss:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.dark .low-stock-banner {
+  background: #3B1212;
+  border-bottom: 2px solid #DC2626;
+}
+
+.dark .low-stock-banner .lsb-icon {
+  color: #F87171;
+}
+
+.dark .low-stock-banner .lsb-label {
+  color: #FCA5A5;
+}
+
+.dark .low-stock-chip {
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.5);
+  color: #FCA5A5;
+}
+
+.dark .low-stock-chip:hover {
+  background: rgba(220, 38, 38, 0.22);
+}
+
+.dark .low-stock-chip-urgent {
+  background: #DC2626;
+  border: 1px solid #DC2626;
+  color: #fff;
+}
+
+.dark .low-stock-chip-urgent:hover {
+  background: #B91C1C;
+}
+
+.dark .low-stock-cta {
+  color: #F87171;
+}
+
+.dark .low-stock-cta:hover {
+  color: #FCA5A5;
+}
+
+.dark .low-stock-dismiss {
+  color: rgba(248, 113, 113, 0.75);
+}
+
+.dark .low-stock-dismiss:hover {
+  background: rgba(220, 38, 38, 0.2);
+  color: #FCA5A5;
+}
 
 /* ---------------------------------------------------------------------
  * Dark theme
@@ -242,33 +499,62 @@ button:disabled { cursor: not-allowed; }
  * SettingsContext based on the saved Theme preference), so switching
  * themes in Settings takes effect immediately, app-wide.
  * --------------------------------------------------------------------- */
-.dark body { background-color: #10151F; color: #E5E9F0; }
+.dark body {
+  background-color: #10151F;
+  color: #E5E9F0;
+}
 
 .dark .bg-\[\#F7F8FA\],
-.dark .bg-\[\#F9FAFB\] { background-color: #10151F !important; }
+.dark .bg-\[\#F9FAFB\] {
+  background-color: #10151F !important;
+}
 
-.dark .bg-white { background-color: #1A2333 !important; }
+.dark .bg-white {
+  background-color: #1A2333 !important;
+}
 
 .dark .border-\[\#E4E7EC\],
 .dark .border-t-\[\#E4E7EC\],
 .dark .border-b-\[\#E4E7EC\],
-.dark .divide-\[\#E4E7EC\] { border-color: #2A3547 !important; }
+.dark .divide-\[\#E4E7EC\] {
+  border-color: #2A3547 !important;
+}
 
-.dark .text-\[\#1E2A3B\] { color: #E5E9F0 !important; }
+.dark .text-\[\#1E2A3B\] {
+  color: #E5E9F0 !important;
+}
+
 .dark .text-gray-400,
-.dark .text-gray-500 { color: #8A94A6 !important; }
-.dark .text-gray-300 { color: #5D6779 !important; }
+.dark .text-gray-500 {
+  color: #8A94A6 !important;
+}
+
+.dark .text-gray-300 {
+  color: #5D6779 !important;
+}
+
 /* These darker gray/black text utilities are used throughout the app for
  * body copy, table cells, and dropdown items assuming a light background.
  * Without an override they stay near-black in dark mode too, which makes
  * them nearly invisible against the dark navy surfaces above — this is
  * the main fix for text-not-visible complaints in dark mode. */
-.dark .text-gray-600 { color: #B7C0D1 !important; }
+.dark .text-gray-600 {
+  color: #B7C0D1 !important;
+}
+
 .dark .text-gray-700,
 .dark .text-gray-800,
-.dark .text-black { color: #E5E9F0 !important; }
-.dark .hover\:text-gray-600:hover { color: #D7DEE9 !important; }
-.dark .hover\:text-gray-700:hover { color: #E5E9F0 !important; }
+.dark .text-black {
+  color: #E5E9F0 !important;
+}
+
+.dark .hover\:text-gray-600:hover {
+  color: #D7DEE9 !important;
+}
+
+.dark .hover\:text-gray-700:hover {
+  color: #E5E9F0 !important;
+}
 
 .dark .stat-card,
 .dark .input-field {
@@ -276,10 +562,18 @@ button:disabled { cursor: not-allowed; }
   border-color: #2A3547;
   color: #E5E9F0;
 }
-.dark .input-field::placeholder { color: #5D6779; }
 
-.dark .table-row:hover { background-color: #202B40; }
-.dark .bg-\[\#F3F4F6\] { background-color: #202B40 !important; }
+.dark .input-field::placeholder {
+  color: #5D6779;
+}
+
+.dark .table-row:hover {
+  background-color: #202B40;
+}
+
+.dark .bg-\[\#F3F4F6\] {
+  background-color: #202B40 !important;
+}
 
 .dark .btn-secondary {
   background-color: #1A2333;
@@ -288,12 +582,24 @@ button:disabled { cursor: not-allowed; }
 }
 
 .dark .shadow-lg,
-.dark .shadow-xl { box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+.dark .shadow-xl {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
 
 /* Scroll-affordance fade for the Settings tab row on mobile — see Settings.tsx */
-.settings-tabs-fade { background: linear-gradient(to right, rgba(255,255,255,0), #fff); }
-.dark .settings-tabs-fade { background: linear-gradient(to right, rgba(26,35,51,0), #1A2333); }
+.settings-tabs-fade {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), #fff);
+}
+
+.dark .settings-tabs-fade {
+  background: linear-gradient(to right, rgba(26, 35, 51, 0), #1A2333);
+}
 
 /* Scroll-affordance fade for wide tables on mobile — see Table.tsx */
-.table-scroll-fade { background: linear-gradient(to right, rgba(255,255,255,0), #fff); }
-.dark .table-scroll-fade { background: linear-gradient(to right, rgba(26,35,51,0), #1A2333); }
+.table-scroll-fade {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), #fff);
+}
+
+.dark .table-scroll-fade {
+  background: linear-gradient(to right, rgba(26, 35, 51, 0), #1A2333);
+}
