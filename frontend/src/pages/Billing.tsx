@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useDeferredValue } from "react";
 import { Search, Plus, Minus, X, CheckCircle, Printer, Download, Receipt, ArrowLeft, Clock, Share2, History, Mic, MicOff } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import { SearchInput } from "../components/ui/SearchInput";
@@ -37,6 +37,11 @@ export default function Billing() {
   const [isListening, setIsListening] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const catalogRef = useRef<any[]>([]);
+
+  useEffect(() => {
+    catalogRef.current = catalog;
+  }, [catalog]);
 
   useEffect(() => {
     productApi.getAll().then(res => setCatalog(res.data)).catch(() => {});
@@ -53,7 +58,18 @@ export default function Billing() {
     setTimeout(() => searchInputRef.current?.focus(), 300);
   }, []);
 
-  const results = catalog.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+  const deferredSearch = useDeferredValue(search);
+  const results = useMemo(() => {
+    const lowerSearch = deferredSearch.toLowerCase();
+    const filtered = catalog.filter((p) => p.name.toLowerCase().includes(lowerSearch));
+    return filtered.slice(0, 50); // Limit to 50 to prevent mobile lag
+  }, [catalog, deferredSearch]);
+
+  const cartMap = useMemo(() => {
+    const map = new Map();
+    cart.forEach(c => map.set(c.id, c));
+    return map;
+  }, [cart]);
 
   const addToCart = (p: any) => {
     setCart((prev) => {
@@ -110,9 +126,20 @@ export default function Billing() {
             const productWords = product_name.toLowerCase();
             const qty = quantity || 1;
             
-            setCatalog((currentCatalog) => {
-              const match = currentCatalog.find(p => p.name.toLowerCase().includes(productWords) || productWords.includes(p.name.toLowerCase()));
-              if (match && match.stock > 0) {
+            const match = catalogRef.current.find(p => p.name.toLowerCase().includes(productWords) || productWords.includes(p.name.toLowerCase()));
+            
+            // Voice Assistant TTS Feedback (ChatGPT style)
+            window.speechSynthesis.cancel(); // Stop any ongoing speech
+            const msg = new SpeechSynthesisUtterance();
+            // te-IN handles Tanglish (English words written in English mixed with Telugu) natively
+            msg.lang = 'te-IN'; 
+            msg.rate = 0.95;
+
+            if (match) {
+              if (match.stock > 0) {
+                msg.text = `Added ${qty} ${match.name}. ${qty} ${match.name} బిల్లులో వేశాను.`;
+                window.speechSynthesis.speak(msg);
+
                 setCart((prev) => {
                   const existing = prev.find((c) => c.id === match.id);
                   const addQty = Math.min(qty, match.stock - (existing ? existing.qty : 0));
@@ -121,9 +148,14 @@ export default function Billing() {
                   return [...prev, { id: match.id, name: match.name, price: parseFloat(match.sell_price), qty: addQty }];
                 });
                 setSearch("");
+              } else {
+                msg.text = `Sorry, ${match.name} is out of stock. స్టాక్ లేదు.`;
+                window.speechSynthesis.speak(msg);
               }
-              return currentCatalog;
-            });
+            } else {
+              msg.text = `Item not found. వస్తువు దొరకలేదు.`;
+              window.speechSynthesis.speak(msg);
+            }
           }
         }
       } catch (err) {
@@ -435,35 +467,35 @@ export default function Billing() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 pb-24 md:pb-4">
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-24 md:pb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
             {results.map((p) => {
-              const cartItem = cart.find(c => c.id === p.id);
+              const cartItem = cartMap.get(p.id);
               
               return (
-              <Card key={p.id} className="hover:border-[#3B5BDB]/40 hover:shadow-sm transition-all cursor-pointer" noPadding>
-                <div className="p-3.5" onClick={() => !cartItem && addToCart(p)}>
-                  <div className="font-semibold text-sm text-[#1E2A3B] mb-1 leading-tight">{p.name}</div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="font-display font-extrabold text-base text-[#3B5BDB]">₹{p.sell_price}</span>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${p.stock > 10 ? "bg-[#DCFCE7] text-green-700" : p.stock > 0 ? "bg-[#FEF3C7] text-amber-700" : "bg-[#FEE2E2] text-red-700"}`}>
+              <Card key={p.id} className="hover:border-[#3B5BDB]/40 hover:shadow-sm transition-all cursor-pointer flex flex-col h-full" noPadding>
+                <div className="p-2.5 sm:p-3.5 flex flex-col flex-1" onClick={() => !cartItem && addToCart(p)}>
+                  <div className="font-semibold text-xs sm:text-sm text-[#1E2A3B] mb-1 sm:mb-2 leading-tight flex-1">{p.name}</div>
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className="font-display font-extrabold text-sm sm:text-base text-[#3B5BDB]">₹{p.sell_price}</span>
+                    <span className={`text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${p.stock > 10 ? "bg-[#DCFCE7] text-green-700" : p.stock > 0 ? "bg-[#FEF3C7] text-amber-700" : "bg-[#FEE2E2] text-red-700"}`}>
                       {p.stock > 0 ? `${p.stock} left` : "Out of stock"}
                     </span>
                   </div>
                   
                   {cartItem ? (
-                    <div className="flex items-center justify-between mt-2.5 h-8 bg-[#EEF2FF] rounded-lg border border-[#3B5BDB]/20" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mt-2 sm:mt-2.5 h-7 sm:h-8 bg-[#EEF2FF] rounded-lg border border-[#3B5BDB]/20" onClick={e => e.stopPropagation()}>
                       <button 
                         onClick={() => cartItem.qty > 1 ? updateQty(p.id, -1) : removeItem(p.id)}
-                        className="w-10 h-full flex items-center justify-center text-[#3B5BDB] font-bold hover:bg-[#3B5BDB]/10 rounded-l-lg transition-colors"
+                        className="w-8 sm:w-10 h-full flex items-center justify-center text-[#3B5BDB] font-bold hover:bg-[#3B5BDB]/10 rounded-l-lg transition-colors"
                       >
                         -
                       </button>
-                      <span className="font-bold text-sm text-[#3B5BDB]">{cartItem.qty} <span className="text-[10px] font-normal opacity-70">in bill</span></span>
+                      <span className="font-bold text-xs sm:text-sm text-[#3B5BDB]">{cartItem.qty} <span className="text-[9px] sm:text-[10px] font-normal opacity-70">in bill</span></span>
                       <button 
                         onClick={() => addToCart(p)}
                         disabled={cartItem.qty >= p.stock}
-                        className="w-10 h-full flex items-center justify-center text-[#3B5BDB] font-bold hover:bg-[#3B5BDB]/10 rounded-r-lg transition-colors disabled:opacity-40"
+                        className="w-8 sm:w-10 h-full flex items-center justify-center text-[#3B5BDB] font-bold hover:bg-[#3B5BDB]/10 rounded-r-lg transition-colors disabled:opacity-40"
                       >
                         +
                       </button>
@@ -472,9 +504,9 @@ export default function Billing() {
                     <button
                       onClick={(e) => { e.stopPropagation(); addToCart(p); }}
                       disabled={p.stock === 0}
-                      className="w-full mt-2.5 py-1.5 rounded-lg bg-[#EEF2FF] text-[#3B5BDB] text-xs font-bold hover:bg-[#3B5BDB] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                      className="w-full mt-2 sm:mt-2.5 py-1 sm:py-1.5 rounded-lg bg-[#EEF2FF] text-[#3B5BDB] text-[10px] sm:text-xs font-bold hover:bg-[#3B5BDB] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                     >
-                      + Add to Bill <span className="hidden xl:inline text-[9px] font-normal opacity-70 ml-1">(Enter to quick-add)</span>
+                      + Add <span className="hidden xl:inline text-[9px] font-normal opacity-70 ml-1">(Enter to quick-add)</span>
                     </button>
                   )}
                 </div>
@@ -670,13 +702,13 @@ export default function Billing() {
             <span className="text-gray-500">Subtotal</span>
             <span className="font-semibold">₹{subtotal.toLocaleString("en-IN")}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500 flex-1">Discount</span>
-            <div className="relative w-24">
-              <input type="number" min="0" max="100" className="input-field text-sm pr-6 py-1.5 text-right" value={discount} onChange={(e) => { const v = parseInt(e.target.value); setDiscount(isNaN(v) ? 0 : Math.min(100, Math.max(0, v))); }} />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
+            <div className="relative flex w-32 items-center">
+              <input type="number" min="0" max="100" className="input-field text-sm py-1.5 w-full text-right pr-2 rounded-r-none border-r-0 focus:z-10" value={discount === 0 ? '' : discount} placeholder="0" onChange={(e) => { const v = parseInt(e.target.value); setDiscount(isNaN(v) ? 0 : Math.min(100, Math.max(0, v))); }} />
+              <div className="flex items-center justify-center w-8 h-[34px] bg-[#F9FAFB] border border-[#E4E7EC] rounded-r-lg text-xs font-semibold text-gray-500">%</div>
             </div>
-            <span className="text-sm font-semibold text-red-500 w-16 text-right">-₹{discountAmt || 0}</span>
+            <span className="text-sm font-bold text-red-500 w-20 text-right">-₹{discountAmt || 0}</span>
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-[#E4E7EC]">
             <span className="font-display font-extrabold text-base">Total</span>

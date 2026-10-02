@@ -42,17 +42,19 @@ exports.sendMessage = async (req, res, next) => {
     
     let stats = statsRes.rows[0] || {};
 
-    const [customersRes, productsRes, creditNamesRes, lowStockRes] = await Promise.all([
+    const [customersRes, productsRes, creditNamesRes, lowStockRes, expensesRes] = await Promise.all([
       db.query('SELECT name FROM customers WHERE user_id = $1 LIMIT 10', [req.user.id]),
-      db.query('SELECT name FROM products WHERE user_id = $1 LIMIT 10', [req.user.id]),
-      db.query(`SELECT DISTINCT c.name FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' LIMIT 10`, [req.user.id]),
-      db.query(`SELECT name FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 10`, [req.user.id])
+      db.query('SELECT name, stock FROM products WHERE user_id = $1 LIMIT 100', [req.user.id]),
+      db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 20`, [req.user.id]),
+      db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id]),
+      db.query(`SELECT category, amount, date FROM expenses WHERE user_id = $1 ORDER BY date DESC LIMIT 15`, [req.user.id])
     ]);
 
     const customerNames = customersRes.rows.map(r => r.name).join(', ');
-    const productNames = productsRes.rows.map(r => r.name).join(', ');
-    const creditNames = creditNamesRes.rows.map(r => r.name).join(', ');
-    const lowStockNames = lowStockRes.rows.map(r => r.name).join(', ');
+    const productNames = productsRes.rows.map(r => `${r.name} (${r.stock} left)`).join(', ');
+    const creditNames = creditNamesRes.rows.map(r => `${r.name} (₹${r.owed})`).join(', ');
+    const lowStockNames = lowStockRes.rows.map(r => `${r.name} (${r.stock} left)`).join(', ');
+    const recentExpenses = expensesRes.rows.map(r => `${r.category}: ₹${r.amount}`).join(', ');
 
     let prompt = `
       You are DukaanMitra AI, an incredibly smart, respectful, and helpful virtual assistant for an Indian Kirana (grocery) store owner.
@@ -62,6 +64,7 @@ exports.sendMessage = async (req, res, next) => {
       - Total All-Time Sales: ₹${stats.total_sales} (from ${stats.total_bills} bills)
       - Sales: Today: ₹${stats.sales_today} | Yesterday: ₹${stats.sales_yesterday} | Week: ₹${stats.sales_week} | Month: ₹${stats.sales_month} | Year: ₹${stats.sales_year}
       - Expenses: Today: ₹${stats.exp_today} | Yesterday: ₹${stats.exp_yesterday} | Week: ₹${stats.exp_week}
+      - Recent Expenses List: ${recentExpenses || 'None recorded yet'}
       - Payments: Cash: ₹${stats.total_cash} | UPI: ₹${stats.total_upi} | Card: ₹${stats.total_card}
       - Total Pending Udhaar/Credit: ₹${stats.total_credit}
       - Customers Owe Credit: ${creditNames || 'None'}
@@ -72,6 +75,15 @@ exports.sendMessage = async (req, res, next) => {
       - Some Inventory Products: ${productNames || 'None yet'}
       
       The store owner just asked you: "${message}"
+      
+      Kirana Vocabulary & Context Guide (Use this to understand their domain):
+      - Grocery/Products: rice, dal, sugar, salt, oil, flour, atta, maida, rava, spices.
+      - Drinks/Snacks: milk, curd, buttermilk, tea, coffee, soft drinks, juice, water bottle, biscuits, chips, chocolates, namkeen, noodles, bread.
+      - Household: soap, shampoo, detergent, toothpaste, toothbrush, washing powder.
+      - Stock/Supply: stock, inventory, available, out of stock, low stock, new stock, supplier, wholesaler, distributor, vendor.
+      - Sales/Finance: sale, profit, loss, margin, revenue, purchase cost, selling price.
+      - Payments/Credit: cash, UPI, PhonePe, Google Pay, card, credit, udhaar, pending amount, due, customer balance.
+      - Analytics/Time: best selling, slow selling, highest sales, lowest sales, prediction, today, yesterday, tomorrow, this week, this month.
       
       Rules for your response:
       1. Be highly conversational, warm, and extremely respectful (like a trusted employee or friend).
@@ -113,6 +125,8 @@ exports.sendMessage = async (req, res, next) => {
     // Ideally they should be declared outside `try`, but for now we'll just query them again or use 0s if DB fails)
     let fbStats = { total_sales: 0, sales_today: 0, sales_yesterday: 0, sales_week: 0, sales_month: 0, sales_year: 0, exp_today: 0, exp_yesterday: 0, exp_week: 0, low_stock_items: 0, total_products: 0, total_customers: 0, total_credit: 0, total_bills: 0 };
     let pNames = '', cNames = '', lsNames = '';
+    let cResRows = [];
+    let pResRows = [];
     
     try {
       const statsRes = await db.query(`
@@ -137,13 +151,15 @@ exports.sendMessage = async (req, res, next) => {
       fbStats = statsRes.rows[0];
       
       const [cRes, pRes, lRes] = await Promise.all([
-        db.query(`SELECT DISTINCT c.name FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' LIMIT 10`, [req.user.id]),
-        db.query(`SELECT name FROM products WHERE user_id = $1 LIMIT 10`, [req.user.id]),
-        db.query(`SELECT name FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 10`, [req.user.id])
+        db.query(`SELECT c.name, SUM(b.total) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' GROUP BY c.id, c.name LIMIT 20`, [req.user.id]),
+        db.query(`SELECT name, stock FROM products WHERE user_id = $1 LIMIT 100`, [req.user.id]),
+        db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id])
       ]);
-      cNames = cRes.rows.map(r => r.name).join(', ');
-      pNames = pRes.rows.map(r => r.name).join(', ');
-      lsNames = lRes.rows.map(r => r.name).join(', ');
+      cResRows = cRes.rows;
+      pResRows = pRes.rows;
+      cNames = cRes.rows.map(r => `${r.name} (₹${r.owed})`).join(', ');
+      pNames = pRes.rows.map(r => `${r.name} (${r.stock})`).join(', ');
+      lsNames = lRes.rows.map(r => `${r.name} (${r.stock})`).join(', ');
     } catch(e) {}
 
     let enResponse = `Based on your store data, your total all-time sales are ₹${fbStats.total_sales}. Keep up the great work!`;
@@ -151,14 +167,29 @@ exports.sendMessage = async (req, res, next) => {
     let biResponse = `మీ store data ప్రకారం, మీ total sales ₹${fbStats.total_sales}. Keep it up!`;
 
     // 1. Udhaar / Credit logic
-    if (msgLower.includes('udhar') || msgLower.includes('udhaar') || msgLower.includes('credit') || msgLower.includes('pending') || msgLower.includes('అప్పు') || msgLower.includes('బాకీ') || msgLower.includes('katha')) {
-      enResponse = `You have a total of ₹${fbStats.total_credit} in pending credit/udhaar. ${cNames ? `Customers who owe you include: ${cNames}.` : 'No customers currently owe you.'}`;
-      teResponse = `మీకు మొత్తం ₹${fbStats.total_credit} అప్పు/బాకీ పెండింగ్‌లో ఉంది. ${cNames ? `మీకు అప్పు ఉన్న కస్టమర్లు: ${cNames}.` : 'ప్రస్తుతం మీకు ఎవరూ అప్పు లేరు.'}`;
-      biResponse = `మీకు total ₹${fbStats.total_credit} credit/udhaar pending లో ఉంది. ${cNames ? `మీకు pending ఉన్న customers: ${cNames}.` : 'ప్రస్తుతం customers ఎవరూ credit లో లేరు.'}`;
+    let mentionedCustomer = null;
+    let mentionedProduct = null;
+    if (cResRows.length > 0) {
+      mentionedCustomer = cResRows.find(c => c.name && msgLower.includes(c.name.toLowerCase()));
+    }
+    if (pResRows.length > 0) {
+      mentionedProduct = pResRows.find(p => p.name && msgLower.includes(p.name.toLowerCase()));
+    }
+    
+    if (msgLower.includes('udhar') || msgLower.includes('udhaar') || msgLower.includes('credit') || msgLower.includes('pending') || msgLower.includes('అప్పు') || msgLower.includes('బాకీ') || msgLower.includes('katha') || msgLower.includes('customer') || msgLower.includes('balance') || msgLower.includes('ivvali') || msgLower.includes('due') || mentionedCustomer) {
+      if (mentionedCustomer) {
+        enResponse = `${mentionedCustomer.name} owes you ₹${mentionedCustomer.owed}.`;
+        teResponse = `${mentionedCustomer.name} మీకు ₹${mentionedCustomer.owed} బాకీ ఉన్నారు.`;
+        biResponse = `${mentionedCustomer.name} కు ₹${mentionedCustomer.owed} pending ఉంది.`;
+      } else {
+        enResponse = `You have a total of ₹${fbStats.total_credit} in pending credit/udhaar. ${cNames ? `Customers who owe you include: ${cNames}.` : 'No customers currently owe you.'}`;
+        teResponse = `మీకు మొత్తం ₹${fbStats.total_credit} అప్పు/బాకీ పెండింగ్‌లో ఉంది. ${cNames ? `మీకు అప్పు ఉన్న కస్టమర్లు: ${cNames}.` : 'ప్రస్తుతం మీకు ఎవరూ అప్పు లేరు.'}`;
+        biResponse = `మీకు total ₹${fbStats.total_credit} credit/udhaar pending లో ఉంది. ${cNames ? `మీకు pending ఉన్న customers: ${cNames}.` : 'ప్రస్తుతం customers ఎవరూ credit లో లేరు.'}`;
+      }
     
     // 2. Expenses Logic
-    } else if (msgLower.includes('expense') || msgLower.includes('karchu') || msgLower.includes('ఖర్చు')) {
-      if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju')) {
+    } else if (msgLower.includes('expense') || msgLower.includes('karchu') || msgLower.includes('ఖర్చు') || msgLower.includes('supplier')) {
+      if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju') || msgLower.includes('aaj') || msgLower.includes('ivala')) {
         enResponse = `Your expenses for today are ₹${fbStats.exp_today}.`;
         teResponse = `ఈరోజు మీ ఖర్చులు ₹${fbStats.exp_today}.`;
         biResponse = `ఈరోజు మీ expenses ₹${fbStats.exp_today}.`;
@@ -177,8 +208,8 @@ exports.sendMessage = async (req, res, next) => {
       }
 
     // 3. Sales Logic (Date ranges)
-    } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('అమ్మకాలు') || msgLower.includes('ammalu') || msgLower.includes('ammakam')) {
-      if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju')) {
+    } else if (msgLower.includes('sales') || msgLower.includes('profit') || msgLower.includes('అమ్మకాలు') || msgLower.includes('ammalu') || msgLower.includes('ammakam') || msgLower.includes('ammudainadi') || msgLower.includes('selling') || msgLower.includes('business') || msgLower.includes('ammam')) {
+      if (msgLower.includes('today') || msgLower.includes('ఈరోజు') || msgLower.includes('eroju') || msgLower.includes('eeroju') || msgLower.includes('aaj') || msgLower.includes('ivala') || msgLower.includes('ivvala')) {
         enResponse = `Your sales for today are ₹${fbStats.sales_today}. Great job!`;
         teResponse = `ఈరోజు మీ అమ్మకాలు ₹${fbStats.sales_today}. చాలా బాగుంది!`;
         biResponse = `ఈరోజు మీ sales ₹${fbStats.sales_today}. సూపర్!`;
@@ -205,8 +236,8 @@ exports.sendMessage = async (req, res, next) => {
       }
 
     // 4. Products / Low Stock Name Listing
-    } else if ((msgLower.includes('name') || msgLower.includes('what') || msgLower.includes('ఏమిటి') || msgLower.includes('పేరు')) && (msgLower.includes('stock') || msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు'))) {
-      if (msgLower.includes('low') || msgLower.includes('empty') || msgLower.includes('తక్కువ') || msgLower.includes('takkuva')) {
+    } else if ((msgLower.includes('name') || msgLower.includes('what') || msgLower.includes('ఏమిటి') || msgLower.includes('పేరు') || msgLower.includes('ye') || msgLower.includes('e') || msgLower.includes('enti')) && (msgLower.includes('stock') || msgLower.includes('product') || msgLower.includes('item') || msgLower.includes('సరుకులు') || msgLower.includes('వస్తువులు'))) {
+      if (msgLower.includes('low') || msgLower.includes('empty') || msgLower.includes('తక్కువ') || msgLower.includes('takkuva') || msgLower.includes('aipoyina') || msgLower.includes('reorder')) {
         enResponse = `You have ${fbStats.low_stock_items} items low on stock. They are: ${lsNames || 'None'}.`;
         teResponse = `మీకు ${fbStats.low_stock_items} వస్తువుల స్టాక్ తక్కువగా ఉంది. అవి: ${lsNames || 'ఏమీ లేవు'}.`;
         biResponse = `మీకు ${fbStats.low_stock_items} items low stock లో ఉన్నాయి. అవి: ${lsNames || 'ఏమీ లేవు'}.`;
@@ -217,10 +248,16 @@ exports.sendMessage = async (req, res, next) => {
       }
 
     // 5. Generic Low Stock Alert
-    } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha')) {
-      enResponse = `You currently have ${fbStats.low_stock_items} items running low on stock. Please restock them!`;
-      teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${fbStats.low_stock_items} వస్తువుల స్టాక్ తక్కువగా ఉంది. వాటిని రీస్టాక్ చేయండి!`;
-      biResponse = `ప్రస్తుతం మీ store లో ${fbStats.low_stock_items} items కు low stock ఉంది. వాటిని restock చేయండి!`;
+    } else if (msgLower.includes('stock') || msgLower.includes('inventory') || msgLower.includes('స్టాక్') || msgLower.includes('entha') || msgLower.includes('undha') || msgLower.includes('undi') || mentionedProduct) {
+      if (mentionedProduct) {
+        enResponse = `You have ${mentionedProduct.stock} left of ${mentionedProduct.name}.`;
+        teResponse = `మీ దగ్గర ${mentionedProduct.stock} ${mentionedProduct.name} స్టాక్ ఉంది.`;
+        biResponse = `మీ దగ్గర ${mentionedProduct.stock} ${mentionedProduct.name} stock ఉంది.`;
+      } else {
+        enResponse = `You currently have ${fbStats.low_stock_items} items running low on stock. Please restock them!`;
+        teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${fbStats.low_stock_items} వస్తువుల స్టాక్ తక్కువగా ఉంది. వాటిని రీస్టాక్ చేయండి!`;
+        biResponse = `ప్రస్తుతం మీ store లో ${fbStats.low_stock_items} items కు low stock ఉంది. వాటిని restock చేయండి!`;
+      }
 
     // 5b. Payment Types
     } else if (msgLower.includes('payment') || msgLower.includes('cash') || msgLower.includes('upi') || msgLower.includes('card') || msgLower.includes('చెల్లింపు') || msgLower.includes('డబ్బు')) {
@@ -249,7 +286,7 @@ exports.sendMessage = async (req, res, next) => {
 exports.parseBilling = async (req, res, next) => {
   const fallbackParse = (text) => {
     let clean = text.toLowerCase();
-    const stop = ["to the cart", "in the cart", "to cart", "in cart", "cart lo", "cart ki", "add chey", "add cheyyi", "veyi", "vey", "kottu", "please"];
+    const stop = ["to the cart", "in the cart", "to cart", "in cart", "cart lo", "cart ki", "add chey", "add cheyyi", "veyi", "vey", "kottu", "please", "ivvu", "ivandi", "kavali", "add", "bill lo", "esey"];
     for (const p of stop) clean = clean.replace(new RegExp(`\\b${p}\\b`, 'gi'), ' ');
     
     const nums = { 'one':1,'oka':1,'okati':1,'two':2,'rendu':2,'three':3,'moodu':3,'four':4,'naalugu':4,'five':5,'aidu':5,'six':6,'aaru':6,'seven':7,'edu':7,'eight':8,'enimidi':8,'nine':9,'tommidi':9,'ten':10,'padi':10 };
@@ -329,7 +366,8 @@ exports.parseExpenseVoice = async (req, res, next) => {
       You are an expert AI parser for a shop owner's expense tracker.
       The user speaks a voice command to log an expense. It may be in English, Telugu, or Tanglish.
       Extract the "amount", "category", and "description".
-      Categories must be one of: "Inventory", "Salary", "Rent", "Utilities", "Marketing", "Maintenance", "Transport", "Other".
+      Categories must be one of: "Inventory", "Salary", "Rent", "Utilities", "Electricity Bill", "Transport", "Purchase Cost", "Marketing", "Maintenance", "Other".
+      Common expense contexts: electricity bill, rent, transport, purchase cost, supplies, vendor payments.
       Output ONLY a valid JSON object with keys "amount" (number), "category" (string), and "description" (string).
       Command: "${transcript}"
     `;
