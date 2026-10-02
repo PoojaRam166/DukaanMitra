@@ -117,6 +117,10 @@ exports.sendMessage = async (req, res, next) => {
       User: "emem products reorder cheyyali?"
       AI: "ఈ products లో స్టాక్ తక్కువగా ఉంది: [List items from low stock...]"
       
+      Example Interactions for Customer Queries:
+      User: "na customers evaru?" or "regular customers list"
+      AI: "మీ customers list ఇదిగోండి: [Read names from context...]"
+      
       Rules for your response:
       1. Be highly conversational, warm, and extremely respectful.
       2. Keep it concise (under 3 short sentences). No long paragraphs.
