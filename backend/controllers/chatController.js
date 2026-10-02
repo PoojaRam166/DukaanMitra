@@ -77,9 +77,11 @@ exports.sendMessage = async (req, res, next) => {
       The store owner just asked you: "${message}"
       
       Kirana Vocabulary & Context Guide (Use this to understand their domain):
-      - Grocery/Products: rice, dal, sugar, salt, oil, flour, atta, maida, rava, spices.
-      - Drinks/Snacks: milk, curd, buttermilk, tea, coffee, soft drinks, juice, water bottle, biscuits, chips, chocolates, namkeen, noodles, bread.
-      - Household: soap, shampoo, detergent, toothpaste, toothbrush, washing powder.
+      - Grocery/Products: rice (biyyam), sugar (panchadara), salt (uppu), oil (noone), atta (godhuma pindi), maida, rava (sooji), poha (atukulu).
+      - Dals: dal (pappu), toor dal (kandi pappu), moong dal (pesara pappu), urad dal (minapappu), chana dal (senaga pappu).
+      - Spices: spices (masala), turmeric (pasupu), mirchi powder (karam), jeera, coriander (dhaniyalu).
+      - Drinks/Snacks: milk (paalu), curd (perugu), buttermilk, tea powder, coffee, soft drinks, juice, water bottle, biscuits, chips, chocolate, namkeen, noodles, bread.
+      - Household: soap, shampoo, detergent, toothpaste, toothbrush, washing powder, dishwash, phenyl.
       - Stock/Supply: stock, inventory, available, out of stock, low stock, new stock, supplier, wholesaler, distributor, vendor.
       - Sales/Finance: sale, profit, loss, margin, revenue, purchase cost, selling price.
       - Payments/Credit: cash, UPI, PhonePe, Google Pay, card, credit, udhaar, pending amount, due, customer balance.
