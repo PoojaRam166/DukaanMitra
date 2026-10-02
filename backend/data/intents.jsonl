@@ -20,3 +20,11 @@
 {"text":"ekkuva sales ye product ki vachayi?","intent":"best_selling_query","product":"all","response":"Best-selling products ni check chesthanu."}
 {"text":"best selling product enti?","intent":"best_selling_query","product":"all","response":"Best-selling product ni check chesthanu."}
 {"text":"slow ga ammudutunna products enti?","intent":"slow_selling_query","product":"all","response":"Slow-moving products ni check chesthanu."}
+{"text":"Ramesh ki entha udhaar undi?","intent":"customer_credit_query","customer":"Ramesh","response":"Ramesh credit balance ni check chesthanu."}
+{"text":"Ramesh pending entha?","intent":"customer_credit_query","customer":"Ramesh","response":"Ramesh pending amount ni check chesthanu."}
+{"text":"Ramesh inka entha ivvali?","intent":"customer_credit_query","customer":"Ramesh","response":"Ramesh outstanding amount ni check chesthanu."}
+{"text":"customer credit list chupinchu","intent":"credit_list_query","customer":"all","response":"Pending credit customers list ni check chesthanu."}
+{"text":"evariki evariki udhaar undi?","intent":"credit_list_query","customer":"all","response":"Outstanding customer balances ni check chesthanu."}
+{"text":"total pending amount entha?","intent":"total_credit_query","customer":"all","response":"Total outstanding credit ni check chesthanu."}
+{"text":"Suresh udhaar clear chesada?","intent":"credit_payment_status","customer":"Suresh","response":"Suresh credit payment status ni check chesthanu."}
+{"text":"Sita entha pay chesindi?","intent":"credit_payment_query","customer":"Sita","response":"Sita payment details ni check chesthanu."}
