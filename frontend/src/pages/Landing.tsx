@@ -91,12 +91,12 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
                 </button>
               ))}
             </div>
-            <button className="btn-secondary text-sm py-2 px-4" onClick={() => onNavigate("login")}>{tr("Login", "లాగిన్")}</button>
-            <button className="btn-secondary text-sm py-2 px-4" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
+            <button className="btn-secondary text-sm py-2 px-3 sm:px-4 whitespace-nowrap" onClick={() => onNavigate("login")}>{tr("Login", "లాగిన్")}</button>
+            <button className="hidden sm:inline-flex btn-secondary text-sm py-2 px-4 whitespace-nowrap" onClick={() => onNavigate("register")}>{tr("Get Started", "ప్రారంభించండి")}</button>
           </div>
         </div>
-        {/* Language switcher on small screens, shown below the main row */}
-        <div className="sm:hidden flex items-center justify-center gap-1 pb-2">
+        {/* Language switcher + Get Started on small screens */}
+        <div className="sm:hidden flex items-center justify-center gap-1 pb-2 px-4">
           {langOptions.map((opt) => (
             <button
               key={opt.id}
@@ -107,6 +107,12 @@ export default function Landing({ onNavigate }: { onNavigate: (p: Page) => void 
               {opt.label}
             </button>
           ))}
+          <button
+            className="ml-auto text-xs font-bold text-[#3B5BDB] whitespace-nowrap px-2 py-1 rounded-md hover:bg-[#EEF2FF] transition-colors"
+            onClick={() => onNavigate("register")}
+          >
+            {tr("Get Started →", "ప్రారంభించండి →")}
+          </button>
         </div>
       </nav>
 
