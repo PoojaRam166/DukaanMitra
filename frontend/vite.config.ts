@@ -21,6 +21,10 @@ export default defineConfig(({ mode }) => {
       minify: !emitSourcemaps,
     },
 
+    define: {
+      'import.meta.env.VITE_VAPID_PUBLIC_KEY': JSON.stringify('BOw2Ao3dHNfCEf7Hd8iqZlurjPdkowpj3Jwbpg_ziZGe-a1qTjaxwpcwzLorEFRkQrohXzFhAiR0egll_meSY_E')
+    },
+
     plugins: [
       react(),
       tailwindcss(),
