@@ -6,7 +6,12 @@ require('dotenv').config();
 const PORT = process.env.PORT || 5000;
 
 const start = async () => {
+  console.log('Starting server boot sequence...');
+  console.log(`Checking DATABASE_URL: ${process.env.DATABASE_URL ? 'Provided' : 'MISSING'}`);
+  console.log(`Checking NODE_ENV: ${process.env.NODE_ENV}`);
+  
   try {
+    console.log('Attempting to connect to PostgreSQL...');
     // Test DB connection
     await db.query('SELECT NOW()');
     console.log('✅ Connected to PostgreSQL');
