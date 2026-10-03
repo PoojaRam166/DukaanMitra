@@ -14,13 +14,13 @@ const getDashboard = async (req, res, next) => {
       await Promise.all([
         // Today's sales total
         db.query(
-          "SELECT COALESCE(SUM(total), 0) AS total, COUNT(*) AS count FROM bills WHERE created_at >= $1 AND user_id = $2",
-          [todayStart.toISOString(), req.user.id]
+          "SELECT COALESCE(SUM(total), 0) AS total, COUNT(*) AS count FROM bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata') AND user_id = $1",
+          [req.user.id]
         ),
         // Yesterday's sales total
         db.query(
-          "SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE created_at >= $1 AND created_at < $2 AND user_id = $3",
-          [yesterdayStart.toISOString(), todayStart.toISOString(), req.user.id]
+          "SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= DATE_TRUNC('day', (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '1 day') AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < DATE_TRUNC('day', NOW() AT TIME ZONE 'Asia/Kolkata') AND user_id = $1",
+          [req.user.id]
         ),
         // All-time sales
         db.query("SELECT COALESCE(SUM(total), 0) AS total FROM bills WHERE user_id = $1", [req.user.id]),
@@ -52,12 +52,12 @@ const getDashboard = async (req, res, next) => {
         `, [req.user.id]),
         // Daily sales for the last 7 days
         db.query(`
-          SELECT TO_CHAR(created_at, 'Dy') AS day,
+          SELECT TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'Dy') AS day,
                  COALESCE(SUM(total), 0) AS sales
           FROM bills
-          WHERE created_at >= NOW() - INTERVAL '7 days' AND user_id = $1
-          GROUP BY TO_CHAR(created_at, 'Dy'), DATE_TRUNC('day', created_at)
-          ORDER BY DATE_TRUNC('day', created_at)
+          WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days' AND user_id = $1
+          GROUP BY TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'Dy'), DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')
+          ORDER BY DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')
         `, [req.user.id]),
         // Total pending udhaar (Credit)
         db.query("SELECT COALESCE(SUM(total - amount_paid), 0) AS total FROM bills WHERE payment_method = 'credit' AND user_id = $1", [req.user.id]),
@@ -74,12 +74,12 @@ const getDashboard = async (req, res, next) => {
         `, [req.user.id]),
         // Daily expenses for the last 7 days
         db.query(`
-          SELECT TO_CHAR(created_at, 'Dy') AS day,
+          SELECT TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'Dy') AS day,
                  COALESCE(SUM(amount), 0) AS expenses
           FROM expenses
-          WHERE created_at >= NOW() - INTERVAL '7 days' AND user_id = $1
-          GROUP BY TO_CHAR(created_at, 'Dy'), DATE_TRUNC('day', created_at)
-          ORDER BY DATE_TRUNC('day', created_at)
+          WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days' AND user_id = $1
+          GROUP BY TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'Dy'), DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')
+          ORDER BY DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')
         `, [req.user.id]),
       ]);
 

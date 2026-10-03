@@ -35,13 +35,20 @@ const getSalesData = async (req, res, next) => {
       `, [req.user.id]),
       // Trends (Group by date)
       db.query(`
+        WITH combined AS (
+          SELECT DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') as date, total as sales, 0 as expenses
+          FROM bills WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClause} AND user_id = $1
+          UNION ALL
+          SELECT DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') as date, 0 as sales, amount as expenses
+          FROM expenses WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClause} AND user_id = $1
+        )
         SELECT 
-          TO_CHAR(DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), 'Mon DD') AS date,
-          COALESCE(SUM(total), 0) AS sales
-        FROM bills
-        WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ${dateRangeClause} AND user_id = $1
-        GROUP BY DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')
-        ORDER BY DATE_TRUNC('day', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') ASC
+          TO_CHAR(date, 'Mon DD') AS date,
+          SUM(sales) AS sales,
+          SUM(expenses) AS expenses
+        FROM combined
+        GROUP BY date
+        ORDER BY date ASC
       `, [req.user.id]),
       // Daily Sales Table
       db.query(`
@@ -102,7 +109,7 @@ const getSalesData = async (req, res, next) => {
       success: true,
       data: {
         summary: summary.rows[0],
-        trendData: trends.rows.map(t => ({ ...t, sales: parseFloat(t.sales) })),
+        trendData: trends.rows.map(t => ({ ...t, sales: parseFloat(t.sales || 0), expenses: parseFloat(t.expenses || 0) })),
         dateTable: daily.rows,
         bestProducts: bestProducts.rows.map(p => ({ ...p, revenue: parseFloat(p.revenue), units: parseInt(p.units) })),
         paymentData

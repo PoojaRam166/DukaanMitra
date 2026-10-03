@@ -172,8 +172,8 @@ exports.sendMessage = async (req, res, next) => {
     // Fallback if stats were not fetched properly
     // (If the error was Groq, we actually lost access to the block scoped `stats` variables here.
     // Ideally they should be declared outside `try`, but for now we'll just query them again or use 0s if DB fails)
-    let fbStats = { total_sales: 0, sales_today: 0, sales_yesterday: 0, sales_week: 0, sales_month: 0, sales_year: 0, exp_today: 0, exp_yesterday: 0, exp_week: 0, low_stock_items: 0, total_products: 0, total_customers: 0, total_credit: 0, total_bills: 0 };
-    let pNames = '', cNames = '', lsNames = '';
+    let fbStats = { total_sales: 0, sales_today: 0, sales_yesterday: 0, sales_week: 0, sales_month: 0, sales_year: 0, exp_today: 0, exp_yesterday: 0, exp_week: 0, low_stock_items: 0, total_products: 0, total_customers: 0, total_credit: 0, total_bills: 0, total_stock_value: 0 };
+    let pNames = '', cNames = '', lsNames = '', globalTcNames = '';
     let cResRows = [];
     let pResRows = [];
 
@@ -195,12 +195,13 @@ exports.sendMessage = async (req, res, next) => {
           (SELECT COALESCE(SUM(total - amount_paid), 0) FROM b WHERE payment_method = 'credit' AND total > amount_paid) AS total_credit,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'cash') AS total_cash,
           (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method IN ('upi', 'phonepe', 'gpay', 'paytm')) AS total_upi,
-          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'card') AS total_card
+          (SELECT COALESCE(SUM(total), 0) FROM b WHERE payment_method = 'card') AS total_card,
+          (SELECT COALESCE(SUM(stock * sell_price), 0) FROM products WHERE user_id = $1 AND stock > 0) AS total_stock_value
       `, [req.user.id]);
       fbStats = statsRes.rows[0];
 
       const [cRes, pRes, lRes, tcRes] = await Promise.all([
-        db.query(`SELECT c.name, SUM(b.total - b.amount_paid) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' AND b.total > b.amount_paid GROUP BY c.id, c.name LIMIT 20`, [req.user.id]),
+        db.query(`SELECT c.name, SUM(b.total - b.amount_paid) as owed FROM bills b JOIN customers c ON c.id = b.customer_id WHERE b.user_id = $1 AND b.payment_method = 'credit' AND b.total > b.amount_paid GROUP BY c.id, c.name ORDER BY owed DESC LIMIT 20`, [req.user.id]),
         db.query(`SELECT name, stock FROM products WHERE user_id = $1 LIMIT 100`, [req.user.id]),
         db.query(`SELECT name, stock FROM products WHERE user_id = $1 AND stock <= min_stock LIMIT 20`, [req.user.id]),
         db.query(`SELECT c.name, SUM(b.total) as total_spent FROM customers c JOIN bills b ON c.id = b.customer_id WHERE b.user_id = $1 GROUP BY c.id, c.name ORDER BY total_spent DESC LIMIT 10`, [req.user.id])
@@ -337,10 +338,15 @@ exports.sendMessage = async (req, res, next) => {
         enResponse = `You have ${mentionedProduct.stock} left of ${mentionedProduct.name}.`;
         teResponse = `మీ దగ్గర ${mentionedProduct.stock} ${mentionedProduct.name} స్టాక్ ఉంది.`;
         biResponse = `మీ దగ్గర ${mentionedProduct.stock} ${mentionedProduct.name} stock ఉంది.`;
+      } else if (msgLower.includes('value') || msgLower.includes('worth') || msgLower.includes('amount') || msgLower.includes('entha') || msgLower.includes('viluva')) {
+        enResponse = `The total estimated value of your current stock is ₹${fbStats.total_stock_value}.`;
+        teResponse = `మీ ప్రస్తుత స్టాక్ మొత్తం అంచనా విలువ ₹${fbStats.total_stock_value}.`;
+        biResponse = `మీ current stock మొత్తం value ₹${fbStats.total_stock_value}.`;
       } else {
-        enResponse = `You currently have ${fbStats.low_stock_items} items running low on stock. Please restock them!`;
-        teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${fbStats.low_stock_items} వస్తువుల స్టాక్ తక్కువగా ఉంది. వాటిని రీస్టాక్ చేయండి!`;
-        biResponse = `ప్రస్తుతం మీ store లో ${fbStats.low_stock_items} items కు low stock ఉంది. వాటిని restock చేయండి!`;
+        const lsText = lsNames ? ` (including: ${lsNames})` : '';
+        enResponse = `You currently have ${fbStats.low_stock_items} items running low on stock${lsText}. Your total inventory is worth ₹${fbStats.total_stock_value}.`;
+        teResponse = `ప్రస్తుతం మీ స్టోర్‌లో ${fbStats.low_stock_items} వస్తువుల స్టాక్ తక్కువగా ఉంది${lsText}. మీ మొత్తం స్టాక్ విలువ ₹${fbStats.total_stock_value}.`;
+        biResponse = `ప్రస్తుతం మీ store లో ${fbStats.low_stock_items} items కు low stock ఉంది${lsText}. మీ total inventory value ₹${fbStats.total_stock_value}.`;
       }
 
       // 5b. Payment Types
