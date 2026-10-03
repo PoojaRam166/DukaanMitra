@@ -89,7 +89,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         '/api': {
-          target: 'https://adventurous-enthusiasm-production-3c9d.up.railway.app',
+          target: 'https://dukaanmitra-production.up.railway.app',
           changeOrigin: true,
         },
       },
