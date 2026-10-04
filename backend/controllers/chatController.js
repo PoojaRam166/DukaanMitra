@@ -156,7 +156,7 @@ exports.sendMessage = async (req, res, next) => {
       const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
       const chatCompletion = await groq.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-8b-instant',
+        model: 'llama3-8b-8192',
       });
       const text = chatCompletion.choices[0]?.message?.content || "";
       return res.json({ success: true, data: text });
@@ -415,7 +415,7 @@ exports.parseBilling = async (req, res, next) => {
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.1-8b-instant',
+      model: 'llama3-8b-8192',
       temperature: 0.1, // very low for reliable JSON
       response_format: { type: "json_object" }
     });
@@ -464,7 +464,7 @@ exports.parseExpenseVoice = async (req, res, next) => {
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.1-8b-instant',
+      model: 'llama3-8b-8192',
       temperature: 0.1,
       response_format: { type: "json_object" }
     });
