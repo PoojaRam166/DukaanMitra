@@ -50,7 +50,7 @@ async function requestForm<T>(method: string, path: string, formData: FormData):
 export const authApi = {
   login: (phone: string, password: string) => request<any>('POST', '/auth/login', { phone, password }),
   register: (name: string, phone: string, email: string, password: string, shopName: string, address: string) => request<any>('POST', '/auth/register', { name, phone, email, password, shopName, address }),
-  googleLogin: (token: string) => request<any>('POST', '/auth/google', { token }),
+  googleLogin: (token?: string, code?: string, redirectUri?: string) => request<any>('POST', '/auth/google', { token, code, redirectUri }),
   me: () => request<any>('GET', '/auth/me'),
   logout: () => request<any>('POST', '/auth/logout'),
 };

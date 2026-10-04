@@ -3,7 +3,10 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 require('dotenv').config();
 const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET
+);
 // Frontend and backend deployed on different domains (e.g. Vercel +
 // Render) need sameSite: 'none' for the browser to send the cookie on
 // cross-site fetch requests — which in turn requires secure: true (HTTPS).
@@ -103,11 +106,22 @@ const login = async (req, res, next) => {
 // POST /api/auth/google
 const googleAuth = async (req, res, next) => {
   try {
-    const { token } = req.body;
-    if (!token) return res.status(400).json({ success: false, message: 'Token is required' });
+    const { token, code, redirectUri } = req.body;
+    if (!token && !code) return res.status(400).json({ success: false, message: 'Token or code is required' });
+
+    let idToken = token;
+
+    if (code) {
+      // Exchange authorization code for tokens
+      const { tokens } = await client.getToken({
+        code,
+        redirect_uri: redirectUri || (isProduction ? 'https://dukaan-mitra-gules.vercel.app' : 'http://localhost:8443')
+      });
+      idToken = tokens.id_token;
+    }
 
     const ticket = await client.verifyIdToken({
-      idToken: token,
+      idToken: idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
