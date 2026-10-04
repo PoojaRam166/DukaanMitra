@@ -131,20 +131,10 @@ const googleAuth = async (req, res, next) => {
     let user;
     
     if (userRes.rows.length === 0) {
-      // Create user if they don't exist
-      const dummyPhone = 'G-' + Math.random().toString().slice(2, 12);
-      const password_hash = await bcrypt.hash(Math.random().toString(36), 10);
-      
-      const insertRes = await db.query(
-        'INSERT INTO users (name, phone, email, password_hash, avatar_url) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, phone, email, role, avatar_url, created_at',
-        [name, dummyPhone, email, password_hash, picture]
-      );
-      user = insertRes.rows[0];
-      
-      await db.query(
-        'INSERT INTO shop_settings (user_id, shop_name) VALUES ($1, $2)',
-        [user.id, `${name}'s Shop`]
-      );
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No account found with this Google email. Please register first.' 
+      });
     } else {
       user = userRes.rows[0];
     }
