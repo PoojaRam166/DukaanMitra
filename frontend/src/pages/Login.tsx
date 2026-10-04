@@ -35,14 +35,13 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
 
   const googleLogin = useGoogleLogin({
     flow: 'auth-code',
-    ux_mode: 'redirect',
-    redirect_uri: window.location.origin,
+    ux_mode: 'popup',
     onSuccess: async (codeResponse) => {
       setLoading(true);
       setError("");
       setSuccess("");
       try {
-        await authApi.googleLogin(undefined, codeResponse.code, window.location.origin);
+        await authApi.googleLogin(undefined, codeResponse.code, 'postmessage');
         await refreshUser();
         onNavigate("dashboard");
       } catch (err: any) {
