@@ -12,7 +12,9 @@ const client = new OAuth2Client(
 // cross-site fetch requests — which in turn requires secure: true (HTTPS).
 // Locally (http://localhost) both are on the same site, so 'lax' + no
 // secure flag is correct there.
-const isProduction = process.env.NODE_ENV === 'production';
+// In Railway and many PaaS, process.env.NODE_ENV might not be explicitly set.
+// We check for RAILWAY_ENVIRONMENT or PORT as a fallback to detect production.
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT || !!process.env.RENDER || !!process.env.PORT;
 const cookieOptions = {
   httpOnly: true,
   secure: isProduction,
