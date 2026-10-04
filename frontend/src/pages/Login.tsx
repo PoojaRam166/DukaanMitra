@@ -187,6 +187,8 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
                   setError('Google Login failed');
                 }}
                 useOneTap
+                theme="filled_blue"
+                shape="rectangular"
               />
             </div>
           </div>
