@@ -2,8 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 require('dotenv').config();
-const nodemailer = require('nodemailer');
-
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -107,86 +107,52 @@ const login = async (req, res, next) => {
   }
 };
 
-// POST /api/auth/forgotpassword
-const forgotPassword = async (req, res, next) => {
+// POST /api/auth/google
+const googleAuth = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ success: false, message: 'Email address is required' });
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: 'Token is required' });
 
-    const userRes = await db.query('SELECT id, email FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, picture } = payload;
+    
+    let userRes = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    let user;
+    
     if (userRes.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'No account found with this email address' });
+      // Create user if they don't exist
+      const dummyPhone = 'G-' + Math.random().toString().slice(2, 12);
+      const password_hash = await bcrypt.hash(Math.random().toString(36), 10);
+      
+      const insertRes = await db.query(
+        'INSERT INTO users (name, phone, email, password_hash, avatar_url) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, phone, email, role, avatar_url, created_at',
+        [name, dummyPhone, email, password_hash, picture]
+      );
+      user = insertRes.rows[0];
+      
+      await db.query(
+        'INSERT INTO shop_settings (user_id, shop_name) VALUES ($1, $2)',
+        [user.id, `${name}'s Shop`]
+      );
+    } else {
+      user = userRes.rows[0];
     }
     
-    const user = userRes.rows[0];
-
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-
-    await db.query(
-      'UPDATE users SET reset_otp = $1, reset_otp_expires = $2 WHERE email = $3',
-      [otp, expires, user.email]
-    );
-
-    try {
-      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        await transporter.sendMail({
-          from: `"DukaanMitra" <${process.env.EMAIL_USER}>`,
-          to: user.email,
-          subject: 'Password Reset OTP - DukaanMitra',
-          html: `<p>Your DukaanMitra password reset OTP is <strong>${otp}</strong>. It expires in 15 minutes.</p>`,
-        });
-      } else {
-        console.log(`\n=========================================`);
-        console.log(`📧 [EMAIL GATEWAY SIMULATOR]`);
-        console.log(`✉️ To: ${user.email}`);
-        console.log(`📝 Message: Your DukaanMitra password reset OTP is ${otp}. It expires in 15 minutes.`);
-        console.log(`=========================================\n`);
-      }
-    } catch (emailErr) {
-      console.error("Nodemailer Error:", emailErr);
-    }
-
-    res.json({ 
-      success: true, 
-      message: 'OTP sent successfully to your registered email'
+    const jwtToken = jwt.sign({ id: user.id, phone: user.phone, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const { password_hash, reset_otp, reset_otp_expires, ...userWithoutHash } = user;
+    
+    res.cookie('token', jwtToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
+    res.json({ success: true, message: 'Google Login successful', data: { user: userWithoutHash } });
   } catch (err) {
-    next(err);
-  }
-};
-
-// POST /api/auth/resetpassword
-const resetPassword = async (req, res, next) => {
-  try {
-    const { email, otp, newPassword } = req.body;
-    if (!email || !otp || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required' });
-    }
-
-    const userRes = await db.query(
-      'SELECT id, reset_otp, reset_otp_expires FROM users WHERE email = $1',
-      [email.toLowerCase().trim()]
-    );
-    if (userRes.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    const user = userRes.rows[0];
-    if (user.reset_otp !== otp || new Date() > new Date(user.reset_otp_expires)) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
-    }
-
-    const password_hash = await bcrypt.hash(newPassword, 10);
-    await db.query(
-      'UPDATE users SET password_hash = $1, reset_otp = NULL, reset_otp_expires = NULL WHERE id = $2',
-      [password_hash, user.id]
-    );
-
-    res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
-  } catch (err) {
-    next(err);
+    console.error('Google Auth Error:', err);
+    res.status(401).json({ success: false, message: 'Invalid Google token' });
   }
 };
 
@@ -209,4 +175,4 @@ const logout = (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 };
 
-module.exports = { register, login, forgotPassword, resetPassword, getMe, logout };
+module.exports = { register, login, googleAuth, getMe, logout };

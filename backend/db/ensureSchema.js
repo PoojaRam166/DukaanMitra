@@ -110,6 +110,13 @@ async function ensureSchema() {
       await db.query(`UPDATE ${t} SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
     }
   }
+  // Fix bill_items product foreign key to ON DELETE CASCADE instead of RESTRICT so users/products can be deleted safely
+  try {
+    await db.query(`ALTER TABLE bill_items DROP CONSTRAINT IF EXISTS bill_items_product_id_fkey;`);
+    await db.query(`ALTER TABLE bill_items ADD CONSTRAINT bill_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;`);
+  } catch(e) {
+    console.error("Failed to update bill_items constraint:", e.message);
+  }
 }
 
 module.exports = ensureSchema;

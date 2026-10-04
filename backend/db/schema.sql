@@ -64,7 +64,7 @@ CREATE TABLE bills (
 CREATE TABLE bill_items (
   id SERIAL PRIMARY KEY,
   bill_id INTEGER REFERENCES bills(id) ON DELETE CASCADE,
-  product_id INTEGER REFERENCES products(id) ON DELETE RESTRICT,
+  product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
   quantity INTEGER NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
   subtotal DECIMAL(10, 2) NOT NULL

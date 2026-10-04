@@ -4,6 +4,7 @@ import { Store, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { authApi } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login({ onNavigate }: { onNavigate: (p: Page) => void }) {
   const { refreshUser } = useAuth();
@@ -14,13 +15,6 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  // Forgot password states
-  const [isForgot, setIsForgot] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [step, setStep] = useState<1 | 2>(1); // 1 = request OTP, 2 = verify OTP & reset
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); 
@@ -39,40 +33,18 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
     }
   };
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSuccess = async (credentialResponse: any) => {
     setLoading(true);
     setError("");
     setSuccess("");
     try {
-      if (!resetEmail.includes('@')) {
-        throw new Error("Please enter a valid email address.");
+      if (credentialResponse.credential) {
+        await authApi.googleLogin(credentialResponse.credential);
+        await refreshUser();
+        onNavigate("dashboard");
       }
-      const res = await authApi.forgotPassword(resetEmail);
-      setSuccess("OTP Sent! Please check your registered email.");
-      setStep(2);
     } catch (err: any) {
-      setError(err.message || 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    try {
-      await authApi.resetPassword(resetEmail, otp, newPassword);
-      setSuccess("Password reset successfully! Please login with your new password.");
-      setIsForgot(false);
-      setStep(1);
-      setOtp("");
-      setNewPassword("");
-      setPassword("");
-    } catch (err: any) {
-      setError(err.message || 'Failed to reset password');
+      setError(err.message || 'Google Login failed');
     } finally {
       setLoading(false);
     }
@@ -119,10 +91,10 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
       {/* Right panel - form */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <button
-          onClick={() => isForgot ? setIsForgot(false) : onNavigate("landing")}
+          onClick={() => onNavigate("landing")}
           className="self-start mb-8 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
         >
-          <ArrowLeft size={15} /> {isForgot ? "Back to Login" : t("backToHome")}
+          <ArrowLeft size={15} /> {t("backToHome")}
         </button>
 
         <div className="w-full max-w-sm">
@@ -134,10 +106,10 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
           </div>
 
           <h1 className="font-display font-extrabold text-2xl text-[#1E2A3B] mb-1">
-            {isForgot ? "Reset Password" : t("welcomeBack")}
+            {t("welcomeBack")}
           </h1>
           <p className="text-sm text-gray-500 mb-8">
-            {isForgot ? "Enter your email address to receive an OTP." : t("signInSubtitle")}
+            {t("signInSubtitle")}
           </p>
 
           {success && (
@@ -146,132 +118,85 @@ export default function Login({ onNavigate }: { onNavigate: (p: Page) => void })
             </div>
           )}
 
-          {!isForgot ? (
-            /* LOGIN FORM */
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">Mobile Number</label>
+          {/* LOGIN FORM */}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">Mobile Number</label>
+              <input
+                type="tel"
+                className="input-field"
+                placeholder="+91 98765 43210"
+                autoComplete="username"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">
+                {t("password")}
+              </label>
+              <div className="relative">
                 <input
-                  type="tel"
-                  className="input-field"
-                  placeholder="+91 98765 43210"
-                  autoComplete="username"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  type={showPw ? "text" : "password"}
+                  className="input-field pr-10"
+                  placeholder={t("enterYourPassword")}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">
-                  {t("password")}
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPw ? "text" : "password"}
-                    className="input-field pr-10"
-                    placeholder={t("enterYourPassword")}
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600 transition-colors"
-                  >
-                    {!showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" id="remember" className="w-4 h-4 rounded accent-[#3B5BDB]" required />
-                  <label htmlFor="remember" className="text-sm text-gray-600">{t("rememberMe")}</label>
-                </div>
-                <a 
-                  onClick={() => { setIsForgot(true); setError(""); setSuccess(""); }} 
-                  className="text-xs font-semibold text-[#3B5BDB] cursor-pointer hover:underline"
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600 transition-colors"
                 >
-                  {t("forgotPassword")}
-                </a>
+                  {!showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
+            </div>
 
-              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
-              <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
-                {loading ? t("signingIn") : t("signInToMyShop")}
-              </button>
-            </form>
-          ) : step === 1 ? (
-            /* FORGOT PASSWORD: STEP 1 (REQUEST OTP) */
-            <form onSubmit={handleRequestOtp} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">Email Address</label>
-                <input
-                  type="email"
-                  className="input-field"
-                  placeholder="your.email@example.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  required
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="remember" className="w-4 h-4 rounded accent-[#3B5BDB]" required />
+                <label htmlFor="remember" className="text-sm text-gray-600">{t("rememberMe")}</label>
               </div>
-              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
-              <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
-                {loading ? "Sending OTP..." : "Send Reset OTP"}
-              </button>
-            </form>
-          ) : (
-            /* FORGOT PASSWORD: STEP 2 (VERIFY OTP & RESET) */
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">Enter OTP</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="123456"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[#1E2A3B] mb-1.5">New Password</label>
-                <div className="relative">
-                  <input
-                    type={showPw ? "text" : "password"}
-                    className="input-field pr-10"
-                    placeholder="Enter new password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(!showPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600 transition-colors"
-                  >
-                    {!showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-              {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
-              <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
-                {loading ? "Resetting..." : "Reset Password"}
-              </button>
-            </form>
-          )}
+            </div>
 
-          {!isForgot && (
-            <p className="text-center text-sm text-gray-500 mt-6">
-              {t("dontHaveAccount")}{" "}
-              <button onClick={() => onNavigate("register")} className="text-[#3B5BDB] font-semibold hover:underline">
-                {t("createAccount")}
-              </button>
-            </p>
-          )}
+            {error && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+            <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-2.5 text-[15px]" style={{ opacity: loading ? 0.7 : 1 }}>
+              {loading ? t("signingIn") : t("signInToMyShop")}
+            </button>
+          </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-[#F7F8FA] text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  setError('Google Login failed');
+                }}
+                useOneTap
+              />
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-gray-500 mt-6">
+            {t("dontHaveAccount")}{" "}
+            <button onClick={() => onNavigate("register")} className="text-[#3B5BDB] font-semibold hover:underline">
+              {t("createAccount")}
+            </button>
+          </p>
         </div>
       </div>
     </div>
