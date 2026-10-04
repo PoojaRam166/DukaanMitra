@@ -277,18 +277,30 @@ export default function Billing() {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(html);
-      printWindow.document.close();
-      printWindow.focus();
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+    
+    if (iframe.contentWindow) {
+      iframe.contentWindow.document.open();
+      iframe.contentWindow.document.write(html);
+      iframe.contentWindow.document.close();
+      iframe.contentWindow.focus();
       
       setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
       }, 250);
     } else {
-      alert("Please allow pop-ups in your browser to print the receipt.");
+      document.body.removeChild(iframe);
+      alert("Printing is not supported in this browser environment.");
     }
   };
 
