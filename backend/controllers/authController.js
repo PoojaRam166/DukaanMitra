@@ -2,9 +2,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 require('dotenv').config();
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
+const nodemailer = require('nodemailer');
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 // Frontend and backend deployed on different domains (e.g. Vercel +
 // Render) need sameSite: 'none' for the browser to send the cookie on
 // cross-site fetch requests — which in turn requires secure: true (HTTPS).
@@ -124,9 +130,9 @@ const forgotPassword = async (req, res, next) => {
     );
 
     try {
-      if (process.env.RESEND_API_KEY) {
-        await resend.emails.send({
-          from: 'DukaanMitra <onboarding@resend.dev>', // free tier requires onboarding domain
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        await transporter.sendMail({
+          from: `"DukaanMitra" <${process.env.EMAIL_USER}>`,
           to: user.email,
           subject: 'Password Reset OTP - DukaanMitra',
           html: `<p>Your DukaanMitra password reset OTP is <strong>${otp}</strong>. It expires in 15 minutes.</p>`,
@@ -139,7 +145,7 @@ const forgotPassword = async (req, res, next) => {
         console.log(`=========================================\n`);
       }
     } catch (emailErr) {
-      console.error("Resend API Error:", emailErr);
+      console.error("Nodemailer Error:", emailErr);
     }
 
     res.json({ 
