@@ -4,13 +4,6 @@ const db = require('../config/db');
 require('dotenv').config();
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 // Frontend and backend deployed on different domains (e.g. Vercel +
 // Render) need sameSite: 'none' for the browser to send the cookie on
 // cross-site fetch requests — which in turn requires secure: true (HTTPS).
