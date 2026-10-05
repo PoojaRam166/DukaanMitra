@@ -133,14 +133,18 @@ exports.sendMessage = async (req, res, next) => {
       EXPENSE questions:
       - "ikkade expenses entha?" / "ఈరోజు ఖర్చు?" → Reply with expense data.
       
-      CUSTOMER questions:
-      - "na customers evaru?" / "regular customers list" → Reply with customer list.
+      CUSTOMER questions (use 'All Registered Customers' and 'Top Regular Customers' from context):
+      - "na customers evaru?" / "naa customers list cheppu" / "మీ కస్టమర్లు ఎవరు?" → List registered customers.
+      - "regular customers evaru?" / "ela customers vastaaru?" / "ela vastuntaaru?" / "most visited customers?" / "ఎక్కువ వచ్చే customers?" → List top regular customers by visit count / spend from 'Top Regular Customers (By Spend)' context.
+      - "[Name] ki details cheppu" / "[Name] gurinchi cheppu" → If customer found in list, tell their visit count and total spend. If not found, say so.
+      AI (customer query): "మీ టాప్ కస్టమర్లు: [Names with spend]. వీరు మీకు చాలా విశ్వాసంగా వస్తారు!"
+      
+      LOW STOCK / REORDER questions (use 'Items Running Out of Stock' from context):
+      - "emem stock takkuva undi?" / "low stock items emi?" / "స్టాక్ తక్కువగా ఉన్నవి?" / "emem order cheyyali?" / "reorder list" → List all items from 'Items Running Out of Stock' in context.
+      AI (low stock): "ఈ వస్తువుల స్టాక్ తక్కువగా ఉంది: [List]. వాటిని వెంటనే తెప్పించుకోండి."
       
       PAYMENT questions:
       - "cash entha vachindi?" / "UPI collections?" → Reply with payment breakdown.
-      
-      REORDER questions:
-      - "emem reorder cheyyali?" / "order pettali emi undi?" → List low stock items.
       
       Rules for your response:
       1. Be highly conversational, warm, and extremely respectful.
@@ -155,14 +159,18 @@ exports.sendMessage = async (req, res, next) => {
     if (language === 'te') {
       prompt += `\nCRITICAL LANGUAGE INSTRUCTION: మీరు పూర్తిగా తెలుగు లిపిలో (Telugu script) సమాధానం ఇవ్వాలి.
       - అన్ని సమాధానాలూ తెలుగులోనే ఉండాలి — చాలా గౌరవంగా మరియు వినయంగా మాట్లాడాలి.
-      - Business figures (₹ amounts, percentages, bill counts, product names) ని అలాగే ఉంచండి — వాటిని translate చేయవద్దు.
+      - Business figures (₹ amounts, product names, customer names) ని అలాగే ఉంచండి — వాటిని translate చేయవద్దు.
       - Example (Sales): "ఈరోజు మీ అమ్మకాలు ₹${stats.sales_today}. చాలా బాగుంది!"
-      - Example (Stock): "అవును, ఆ వస్తువు మీ దగ్గర ఉంది. Stock బాగానే ఉంది."
+      - Example (Stock): "అవును, మీ దగ్గర [X] [Product] స్టాక్ ఉంది."
+      - Example (Low Stock): "స్టాక్ తక్కువగా ఉన్న వస్తువులు: [Items]. వీటిని వెంటనే తెప్పించుకోండి."
+      - Example (Top Customers): "మీ టాప్ కస్టమర్లు: [Names with ₹ spent]. వీరు మీకు చాలా విశ్వాసంగా వస్తారు!"
+      - Example (Customer Details): "[Name] మీ దుకాణానికి [N] సార్లు వచ్చారు మరియు మొత్తం ₹[X] ఖర్చు చేశారు."
+      - Example (All Customers): "మీ నమోదైన కస్టమర్లు: [Names]."
       - Example (Credit): "మీకు మొత్తం ₹${stats.total_credit} అప్పు పెండింగ్‌లో ఉంది."
-      - Example (Reorder): "స్టాక్ తక్కువగా ఉన్న వస్తువులు వెంటనే తెప్పించుకోండి."
-      - Rule: NEVER hallucinate numbers. Only use numbers from the Live Store Context above.
+      - Rule: NEVER hallucinate numbers. Only use data from the Live Store Context above.
       - Rule: Keep it short — 1 to 3 sentences max. No long essays.
-      - Rule: Be warm, helpful, and extremely polite — address the owner as 'మీరు'.`;
+      - Rule: Be warm, helpful, and extremely polite — address the owner as 'మీరు'.
+      - Rule: For customer/low-stock questions, always read from the provided context lists — do NOT say 'no data' if the lists are populated.`;
     } else if (language === 'bi') {
       prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply in a highly natural "Tanglish" mix (Telugu script + English words). 
       - Use Telugu script for grammar and structure, but write business words in English.
