@@ -23,14 +23,14 @@ async function ensureSchema() {
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);`);
   // Backfill existing users with a dummy phone to satisfy unique constraint
   await db.query(`UPDATE users SET phone = '999999' || id WHERE phone IS NULL;`);
-  
+
   // Try to set NOT NULL and UNIQUE on phone, ignoring errors if already exists
-  try { await db.query(`ALTER TABLE users ALTER COLUMN phone SET NOT NULL;`); } catch(e) {}
-  try { await db.query(`ALTER TABLE users ADD CONSTRAINT users_phone_key UNIQUE (phone);`); } catch(e) {}
-  
+  try { await db.query(`ALTER TABLE users ALTER COLUMN phone SET NOT NULL;`); } catch (e) { }
+  try { await db.query(`ALTER TABLE users ADD CONSTRAINT users_phone_key UNIQUE (phone);`); } catch (e) { }
+
   // Make email optional
-  try { await db.query(`ALTER TABLE users ALTER COLUMN email DROP NOT NULL;`); } catch(e) {}
-  try { await db.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;`); } catch(e) {}
+  try { await db.query(`ALTER TABLE users ALTER COLUMN email DROP NOT NULL;`); } catch (e) { }
+  try { await db.query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;`); } catch (e) { }
 
   // Add forgot password OTP fields
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_otp VARCHAR(10);`);
@@ -99,7 +99,7 @@ async function ensureSchema() {
   // MULTI-TENANCY MIGRATION:
   // Ensure user_id column exists on all core tables for data isolation.
   const tables = ['products', 'customers', 'bills', 'expenses', 'push_subscriptions', 'notifications', 'shop_settings'];
-  
+
   // Find a default user to assign existing records to (so we don't break NOT NULL)
   const defaultUserRes = await db.query('SELECT id FROM users LIMIT 1');
   const defaultUserId = defaultUserRes.rows[0] ? defaultUserRes.rows[0].id : null;
@@ -109,14 +109,15 @@ async function ensureSchema() {
     if (defaultUserId) {
       await db.query(`UPDATE ${t} SET user_id = $1 WHERE user_id IS NULL`, [defaultUserId]);
     }
-  }
-  // Fix bill_items product foreign key to ON DELETE CASCADE instead of RESTRICT so users/products can be deleted safely
-  try {
-    await db.query(`ALTER TABLE bill_items DROP CONSTRAINT IF EXISTS bill_items_product_id_fkey;`);
-    await db.query(`ALTER TABLE bill_items ADD CONSTRAINT bill_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;`);
-  } catch(e) {
-    console.error("Failed to update bill_items constraint:", e.message);
-  }
-}
 
-module.exports = ensureSchema;
+    // Fix bill_items product foreign key to ON DELETE CASCADE instead of RESTRICT so users/products can be deleted safely
+    try {
+      await db.query(`ALTER TABLE bill_items DROP CONSTRAINT IF EXISTS bill_items_product_id_fkey;`);
+      await db.query(`ALTER TABLE bill_items ADD CONSTRAINT bill_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;`);
+    } catch (e) {
+      console.error("Failed to update bill_items constraint:", e.message);
+    }
+  }
+
+  module.exports = ensureSchema;
+}
