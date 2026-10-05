@@ -110,35 +110,46 @@ exports.sendMessage = async (req, res, next) => {
       - Payments/Credit: payment (dabbu, pay), cash (nagadu), credit (udhaar, appu, pending), balance (migilindi), credit sale (udhaar sale, appu ki ichina), customer (grahakudu, buyer).
       - Analytics/Time: best selling, slow selling, highest sales, lowest sales, prediction, today, yesterday, tomorrow, this week, this month.
       
-      Example Interactions for Stock/Availability (Varies based on real data):
-      User: "rice undha?" or "rice stock entha undi?"
-      AI (If stock > 0): "Yes, మీ దగ్గర [X] Rice స్టాక్ ఉంది." 
-      AI (If stock = 0 or missing): "No, Rice out of stock అయిపోయింది."
+      CRITICAL Example Interactions — You MUST match the user's question to the correct data topic:
       
-      Example Interactions for Sales Queries:
-      User: "ivala sales entha?"
+      STOCK / INVENTORY questions (check 'All Inventory Products' list):
+      - "naa daggara stock entha?" / "stock entha undi?" / "నా దగ్గర స్టాక్ ఎంత?" → Reply with inventory/stock info, NOT sales.
+      - "rice undha?" / "rice stock entha undi?" / "rice ledu?" → Check the product list and reply stock count.
+      - "emem stock takkuva ga undi?" / "low stock emi undi?" → List low stock items from context.
+      - "total stock value entha?" / "inventory viluva entha?" → Reply with total_stock_value.
+      AI (stock > 0): "అవును, మీ దగ్గర [X] [Product] స్టాక్ ఉంది."
+      AI (stock = 0): "లేదు, [Product] ప్రస్తుతం అయిపోయింది."
+      
+      SALES questions:
+      - "ivala sales entha?" / "today ammakam entha?" / "ఈరోజు విక్రయాలు?" → Reply with sales_today.
+      - "this week sales?" / "nela ammakalu?" → Reply with sales_week or sales_month.
       AI: "ఈరోజు మీ అమ్మకాలు ₹[X]."
       
-      Example Interactions for Udhaar/Credit Queries:
-      User: "Ramesh ki entha udhaar undi?"
-      AI (If Ramesh is in list): "రమేష్ మీకు ₹[X] ఇవ్వాలి."
-      AI (If Ramesh NOT in list): "రమేష్ కి ఎలాంటి బాకీ లేదు."
+      UDHAAR / CREDIT questions:
+      - "Ramesh ki entha udhaar undi?" / "total udhaar entha?" → Reply with credit info.
+      - "evaru baaki ivvali?" / "pending credit list" → List customers who owe money.
+      AI: "రమేష్ మీకు ₹[X] బాకీ ఉన్నారు."
       
-      Example Interactions for Reorder Queries:
-      User: "emem products reorder cheyyali?"
-      AI: "ఈ products లో స్టాక్ తక్కువగా ఉంది: [List items from low stock...]"
+      EXPENSE questions:
+      - "ikkade expenses entha?" / "ఈరోజు ఖర్చు?" → Reply with expense data.
       
-      Example Interactions for Customer Queries:
-      User: "na customers evaru?" or "regular customers list"
-      AI: "మీ customers list ఇదిగోండి: [Read names from context...]"
+      CUSTOMER questions:
+      - "na customers evaru?" / "regular customers list" → Reply with customer list.
+      
+      PAYMENT questions:
+      - "cash entha vachindi?" / "UPI collections?" → Reply with payment breakdown.
+      
+      REORDER questions:
+      - "emem reorder cheyyali?" / "order pettali emi undi?" → List low stock items.
       
       Rules for your response:
       1. Be highly conversational, warm, and extremely respectful.
       2. Keep it concise (under 3 short sentences). No long paragraphs.
-      3. CRITICAL: NEVER hallucinate or assume. If asked about stock, FIRST check the 'All Inventory Products' list. If stock > 0, say YES and give the number. If stock is 0 or the item is not in the list, you MUST say NO / OUT OF STOCK.
-      4. Never mention the "PostgreSQL database" or "Live Store Context" directly. Just speak naturally.
-      5. IMPORTANT: You are an internal assistant for the SHOPKEEPER ONLY. Do not act like a customer-facing chatbot. 
-      6. Adapt your language exactly to the user's selected language (Telugu, English, or Tanglish) as instructed below.
+      3. CRITICAL TOPIC DETECTION: Read the user's question carefully. "stock entha", "naa daggara", "undha", "ledu", "undi" → these are STOCK questions. "sales", "ammakalu", "ammam" → these are SALES questions. NEVER give a sales answer to a stock question.
+      4. CRITICAL: NEVER hallucinate or assume. If asked about stock, FIRST check the 'All Inventory Products' list. If stock > 0, say YES and give the number. If stock is 0 or the item is not in the list, you MUST say NO / OUT OF STOCK.
+      5. Never mention the "PostgreSQL database" or "Live Store Context" directly. Just speak naturally.
+      6. IMPORTANT: You are an internal assistant for the SHOPKEEPER ONLY. Do not act like a customer-facing chatbot. 
+      7. Adapt your language exactly to the user's selected language (Telugu, English, or Tanglish) as instructed below.
     `;
 
     if (language === 'te') {
