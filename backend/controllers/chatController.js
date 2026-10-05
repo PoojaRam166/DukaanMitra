@@ -142,7 +142,16 @@ exports.sendMessage = async (req, res, next) => {
     `;
 
     if (language === 'te') {
-      prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply entirely in the Telugu script (తెలుగు). Be extremely respectful. Use proper Telugu grammar.`;
+      prompt += `\nCRITICAL LANGUAGE INSTRUCTION: మీరు పూర్తిగా తెలుగు లిపిలో (Telugu script) సమాధానం ఇవ్వాలి.
+      - అన్ని సమాధానాలూ తెలుగులోనే ఉండాలి — చాలా గౌరవంగా మరియు వినయంగా మాట్లాడాలి.
+      - Business figures (₹ amounts, percentages, bill counts, product names) ని అలాగే ఉంచండి — వాటిని translate చేయవద్దు.
+      - Example (Sales): "ఈరోజు మీ అమ్మకాలు ₹${stats.sales_today}. చాలా బాగుంది!"
+      - Example (Stock): "అవును, ఆ వస్తువు మీ దగ్గర ఉంది. Stock బాగానే ఉంది."
+      - Example (Credit): "మీకు మొత్తం ₹${stats.total_credit} అప్పు పెండింగ్‌లో ఉంది."
+      - Example (Reorder): "స్టాక్ తక్కువగా ఉన్న వస్తువులు వెంటనే తెప్పించుకోండి."
+      - Rule: NEVER hallucinate numbers. Only use numbers from the Live Store Context above.
+      - Rule: Keep it short — 1 to 3 sentences max. No long essays.
+      - Rule: Be warm, helpful, and extremely polite — address the owner as 'మీరు'.`;
     } else if (language === 'bi') {
       prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply in a highly natural "Tanglish" mix (Telugu script + English words). 
       - Use Telugu script for grammar and structure, but write business words in English.
