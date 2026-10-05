@@ -174,10 +174,28 @@ exports.sendMessage = async (req, res, next) => {
     } else if (language === 'bi') {
       prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply in a highly natural "Tanglish" mix (Telugu script + English words). 
       - Use Telugu script for grammar and structure, but write business words in English.
-      - Example: "మీ store sales ఈరోజు చాలా బాగున్నాయి! మీకు ${stats.low_stock_items} products కి low stock ఉంది. వాటిని వెంటనే restock చేసుకోండి."
-      - Do NOT use 100% pure Telugu. Real Indian shop owners mix English business words (sales, stock, customers, profit, products) into their Telugu sentences.`;
+      - Example (Sales): "ఈరోజు మీ sales ₹${stats.sales_today}. Keep it up!"
+      - Example (Stock): "అవును, మీ దగ్గర [X] [Product] stock ఉంది."
+      - Example (Low Stock): "ఈ products కి low stock ఉంది: [Items]. వెంటనే restock చేసుకోండి."
+      - Example (Top Customers): "మీ top customers: [Names with ₹ spent]."
+      - Example (Customer Details): "[Name] మీ store కి [N] సార్లు వచ్చారు, total గా ₹[X] spend చేసారు."
+      - Example (Credit): "మీకు total గా ₹${stats.total_credit} udhaar pending ఉంది."
+      - Do NOT use 100% pure Telugu. Real Indian shop owners mix English business words.
+      - Rule: NEVER hallucinate numbers. Use only provided context data.
+      - Rule: Keep it short — 1 to 3 sentences max.
+      - Rule: For customer/low-stock questions, always read from the provided context lists.`;
     } else {
-      prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply in fluent English. Be highly respectful.`;
+      prompt += `\nCRITICAL LANGUAGE INSTRUCTION: You MUST reply in fluent English. Be highly respectful.
+      - Example (Sales): "Your sales for today are ₹${stats.sales_today}. Great job!"
+      - Example (Stock): "Yes, you have [X] [Product] currently in stock."
+      - Example (Low Stock): "The following items are running low on stock: [Items]. Please reorder them."
+      - Example (Top Customers): "Your top customers are: [Names with ₹ spent]. They are very loyal!"
+      - Example (Customer Details): "[Name] has visited [N] times and spent a total of ₹[X]."
+      - Example (Credit): "You have a total of ₹${stats.total_credit} in pending credit."
+      - Rule: NEVER hallucinate numbers. Only use data from the Live Store Context above.
+      - Rule: Keep it short — 1 to 3 sentences max.
+      - Rule: Be warm, helpful, and polite.
+      - Rule: For customer/low-stock questions, always read from the provided context lists.`;
     }
 
     if (process.env.GROQ_API_KEY) {
