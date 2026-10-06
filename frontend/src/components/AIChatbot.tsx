@@ -20,6 +20,7 @@ export function AIChatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (messages.length === 1) {
@@ -63,13 +64,21 @@ export function AIChatbot() {
     }
   };
 
-  const startListening = () => {
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Your browser does not support Voice Input.");
       return;
     }
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.lang = (language === 'te' || language === 'bi') ? 'te-IN' : 'en-US';
     recognition.interimResults = false;
     
@@ -138,7 +147,12 @@ export function AIChatbot() {
               </div>
             </div>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                if ('speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+                }
+              }}
               className="p-1 hover:bg-white/20 rounded-lg transition-colors"
             >
               <X size={18} />
@@ -201,7 +215,7 @@ export function AIChatbot() {
               />
               <button
                 type="button"
-                onClick={isListening ? undefined : startListening}
+                onClick={toggleListening}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 relative ${
                   isListening 
                     ? 'bg-red-500 text-white shadow-lg shadow-red-500/40 ring-2 ring-red-500/50' 
