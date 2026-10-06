@@ -119,5 +119,6 @@ async function ensureSchema() {
     }
   }
 
-  module.exports = ensureSchema;
 }
+
+module.exports = ensureSchema;
